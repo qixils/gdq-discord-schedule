@@ -44,10 +44,6 @@ reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellek
 # aiohttp session, do not change
 session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
 
-# obsolete variables
-# twitch_client_id = open('twitch-client-id.txt', 'r').read().split('\n')[0]
-# twitch_headers = {"headers": {"Client-ID": twitch_client_id}}
-
 
 async def load_gdq_json(query):
     """
@@ -67,6 +63,14 @@ async def load_gdq_json(query):
             print("GET {} returned {} {} -- aborting".format(url, r.status, await r.text()))
             exit()
     return jsondata
+
+
+async def load_gdq_index():
+    """
+    Returns the GDQ index (main) page, includes donation totals
+    :return: json object
+    """
+    return (await load_gdq_json(f'?type=event&id={eventID}'))[0]['fields']
 
 
 async def load_json_from_reddit(wiki_page, subreddit="VODThread", log_errors: bool = True):
@@ -89,28 +93,8 @@ async def load_json_from_reddit(wiki_page, subreddit="VODThread", log_errors: bo
     wiki_data = "\n".join([line.partition("#")[0].rstrip() for line in page.split("\n")])
     return json.loads(wiki_data)
 
-# obsolete function
-#def twitch_info():
-#    """
-#    Returns the current game being played on the GDQ stream. Code not currently in use (replaced by schedule timing)
-#    :return: string for the name of the current active game
-#    """
-#    url = 'https://api.twitch.tv/helix/streams?user_id=22510310'
-#    error = "[twitch unavailable]"
-#    regpattern = r".+ - (.+)"  # may need to be adjusted for various events, their titles are inconsistent
-#
-#    async with session.get(url, headers={"Client-ID": twitch_client_id}) as r:
-#        if r.status == 200:
-#            jsondata = await r.json()
-#        else:
-#            print("GET {} returned {} {} -- ignoring".format(url, r.status, await r.text()))
-#            return error
-#
-#    if not jsondata['data']:
-#        return error
-#    return re.match(regpattern, jsondata['data'][0]['title']).group(1)
 
-
+# Utility Functions
 def comma_format(input_list):
     *a, b = input_list
     return ' and '.join([', '.join(a), b]) if a else b
@@ -133,23 +117,14 @@ class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.eventID = eventID
         self.event: str = None
         self.timezone: pytz.timezone = None
         self.donation_milestones = []  # ping% milestones that have been reached
         self.first_donation_check = True  # if this is the ping% init
-        self.donation_ranges = murph_donations
         self.username_cache = {}
 
         # create the background task and run it in the background
         self.bg_task = self.loop.create_task(self.my_background_task())
-
-    async def load_gdq_index(self):
-        """
-        Returns the GDQ index (main) page, includes donation totals
-        :return: json object
-        """
-        return (await load_gdq_json(f'?type=event&id={self.eventID}'))[0]['fields']
 
     async def runner_name(self, runner_id):
         """
@@ -158,7 +133,7 @@ class DiscordClient(discord.Client):
         :return: string of runner's username
         """
         if runner_id not in self.username_cache:
-            self.username_cache[runner_id] = runner_data = (await load_gdq_json(f"?type=runner&id={runner_id}"))[0]['fields']
+            self.username_cache[runner_id] = (await load_gdq_json(f"?type=runner&id={runner_id}"))[0]['fields']
             # fields: 'stream' (full URL), 'twitter' (just the username), 'youtube' (often blank),
             # 'platform' (seen value of "TWITCH"), 'pronouns'
         return self.username_cache[runner_id]
@@ -168,9 +143,9 @@ class DiscordClient(discord.Client):
         Processes the human-readable schedule.
         :return: list of runs
         """
-        schedule = await load_gdq_json(f"?type=run&event={self.eventID}")
+        schedule = await load_gdq_json(f"?type=run&event={eventID}")
         # Header Message
-        index = await self.load_gdq_index()
+        index = await load_gdq_index()
         dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at " \
                  "https://gamesdonequick.com/tracker/ui/donate/{lnk}. (Minimum Donation: {mnd})"
         dnmsg2 = "Raised {amt} from {dns} donators for {cha}. "
@@ -185,7 +160,7 @@ class DiscordClient(discord.Client):
         gdqvods = await load_json_from_reddit(f'{self.event}vods')
         gdqytvods = await load_json_from_reddit(f'{self.event}yt', log_errors=False)
         runcount = 0
-        bids = await load_gdq_json(f"?type=bid&event={self.eventID}")
+        bids = await load_gdq_json(f"?type=bid&event={eventID}")
         biddex = {}
         current_date = datetime.date(year=1970, month=1, day=15)  # for splitting schedule by end of day
         # pre-prepare bids (more efficient than repeatedly iterating through every bid)
@@ -341,7 +316,7 @@ class DiscordClient(discord.Client):
         await self.wait_until_ready()
         global session
         session = aiohttp.ClientSession()
-        index = await self.load_gdq_index()
+        index = await load_gdq_index()
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
         rushschd = self.get_channel(schedule_channel_id)
@@ -351,7 +326,7 @@ class DiscordClient(discord.Client):
         while not self.is_closed():
             # remove a redundant API call
             if not init:
-                index = await self.load_gdq_index()
+                index = await load_gdq_index()
             else:
                 init = False
 
@@ -360,8 +335,8 @@ class DiscordClient(discord.Client):
             donomsg = f"${donations:,.2f} donations"
             activ = discord.Activity(type=discord.ActivityType.watching, name=donomsg)
             await client.change_presence(activity=activ)
-            if self.donation_ranges is not None:
-                for x in self.donation_ranges:
+            if murph_donations is not None:
+                for x in murph_donations:
                     if donations >= x:
                         if x not in self.donation_milestones:
                             if not self.first_donation_check:
