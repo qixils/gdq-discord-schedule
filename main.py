@@ -11,6 +11,7 @@ from dateutil.parser import *
 
 # CHANGE THESE VARIABLES
 # ID of the event in the API. Get from https://gamesdonequick.com/tracker/search/?type=event
+# ESA: https://donations.esamarathon.com/search/?type=event
 eventID = 30
 
 # Discord channel to post the schedule to
@@ -18,6 +19,9 @@ schedule_channel_id = 460520708414504961
 
 
 # OPTIONAL VARIABLES
+# URL for GDQ's API. can also use donation trackers forked from GDQ's, ie ESA: "https://donations.esamarathon.com/search/"
+gdq_url = "https://gamesdonequick.com/tracker/search/"
+
 # name options/examples:
 #   'name': 'Bonus Game 2 - Mario Kart 8 Deluxe' -- what appears on the schedule/index. some events use 'Setup Block X'
 #   'display_name': 'Mario Kart 8 Deluxe' -- actual game name
@@ -51,7 +55,7 @@ async def load_gdq_json(query):
     :param query: the search parameters to query
     :return: json object
     """
-    url = f"https://gamesdonequick.com/tracker/search/{query}"
+    url = f"{gdq_url}{query}"
     async with session.get(url, **gdq_headers) as r:
         if r.status == 200:
             jsondata = await r.json()
