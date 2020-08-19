@@ -31,6 +31,9 @@ name_display = 'name'
 # how many upcoming runs to display (not including the current run) in channel topic/embed
 upcoming_runs = 3
 
+# local timezone for appropriately displaying when the upcoming run is
+local_timezone = pytz.timezone('US/Eastern')
+
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
 # set to None to disable
 murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 10000)) + list(range(1000000, 10000000, 50000))
@@ -208,7 +211,7 @@ class DiscordClient(discord.Client):
             # upcoming games list (channel topic)
             # this has some repeating lines but it.. works
             if 0 < len(self.gameslist) < upcoming_runs+1:
-                htime = humanize.naturaltime(starts_at.replace(tzinfo=None))
+                htime = humanize.naturaltime(starts_at.astimezone(local_timezone).replace(tzinfo=None))
                 htime = htime[0].upper() + htime[1:]
                 runline = f"{htime}: {gamename} ({category}) by "
                 self.gameslist.append(runline + human_runners)
