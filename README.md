@@ -12,4 +12,6 @@ Use `pip install -U -r requirements.txt` to install the required dependencies.
 
 Set the global variables at the top of the file appropriately, particularly the event ID which is required to know which event to load.
 
+Create a `token.txt` file with a Discord bot token contained within.
+
 Run with `python3 main.py`
