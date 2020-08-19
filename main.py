@@ -204,11 +204,11 @@ class DiscordClient(discord.Client):
             race_str = " **RACE**" if (not run_data['coop'] and len(runners) > 1) else ""  # says if race or not
             estimate = run_data['run_time']  # run length/estimate
 
-            dtnow = datetime.datetime.now().astimezone(self.timezone)
+            dtnow = datetime.datetime.now(self.timezone)
             # upcoming games list (channel topic)
             # this has some repeating lines but it.. works
             if 0 < len(self.gameslist) < upcoming_runs+1:
-                htime = humanize.naturaltime(starts_at.astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None))
+                htime = humanize.naturaltime(starts_at.replace(tzinfo=None))
                 htime = htime[0].upper() + htime[1:]
                 runline = f"{htime}: {gamename} ({category}) by "
                 self.gameslist.append(runline + human_runners)
