@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import json
 import traceback
-
 import pytz
 import discord
 import aiohttp
@@ -10,10 +9,15 @@ import humanize
 from dateutil.parser import *
 
 
-# CHANGE THIS VARIABLE
-# get from https://gamesdonequick.com/tracker/search/?type=event
+# CHANGE THESE VARIABLES
+# ID of the event in the API. Get from https://gamesdonequick.com/tracker/search/?type=event
 eventID = 30
 
+# Discord channel to post the schedule to
+schedule_channel_id = 460520708414504961
+
+
+# OPTIONAL VARIABLES
 # name options/examples:
 #   'name': 'Bonus Game 2 - Mario Kart 8 Deluxe' -- what appears on the schedule/index. some events use 'Setup Block X'
 #   'display_name': 'Mario Kart 8 Deluxe' -- actual game name
@@ -23,8 +27,11 @@ name_display = 'name'
 # how many upcoming runs to display (not including the current run) in channel topic/embed
 upcoming_runs = 3
 
-# ranges for murphy's ping% game
-murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 25000)) + list(range(1000000, 10000000, 50000))
+# Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
+# set to None to disable
+murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 10000)) + list(range(1000000, 10000000, 50000))
+# channel ID for murphy's game
+murph_channel_id = 442082610785550337
 
 # request headers, generally shouldn't change
 gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
@@ -333,33 +340,41 @@ class DiscordClient(discord.Client):
         index = await self.load_gdq_index()
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
-        rushserv = self.get_guild(442082610269782017)
-        rushschd = self.get_channel(460520708414504961)
+        rushschd = self.get_channel(schedule_channel_id)
+        init = True
 
         # Start background loop
         while not self.is_closed():
-            index = await self.load_gdq_index()
+            # remove a redundant API call
+            if not init:
+                index = await self.load_gdq_index()
+            else:
+                init = False
 
             # donation ping% / status changer
             donations = float(index['amount'])
             donomsg = f"${donations:,.2f} donations"
             activ = discord.Activity(type=discord.ActivityType.watching, name=donomsg)
             await client.change_presence(activity=activ)
-            for x in self.donation_ranges:
-                if donations >= x:
-                    if x not in self.donation_milestones:
-                        if not self.first_donation_check:
-                            await rushserv.get_channel(442082610785550337).send(f"<@187684157181132800> ${x}")
-                        self.donation_milestones.append(x)
-            self.first_donation_check = False
+            if self.donation_ranges is not None:
+                for x in self.donation_ranges:
+                    if donations >= x:
+                        if x not in self.donation_milestones:
+                            if not self.first_donation_check:
+                                await rushschd.guild.get_channel(murph_channel_id).send(f"<@187684157181132800> ${x}")
+                            self.donation_milestones.append(x)
+                self.first_donation_check = False
 
             try:  # the SCHEDULE
+                # reset variables
                 self.gameslist = []
                 self.embedlist = []
                 self.msgIndex = 0
+                # get schedule
                 schedule = await self.human_schedule()
-                schedule.append(self.embedlist)
+                schedule.append(self.embedlist)  # add data for embed
                 dtoffset = datetime.datetime.utcnow() - datetime.timedelta(days=10)
+                # update/post the schedule messages
                 async for message in rushschd.history(after=dtoffset, limit=None):
                     if message.author == self.user:
                         await self.process_message(schedule, message=message)
