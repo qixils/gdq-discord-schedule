@@ -228,16 +228,18 @@ class DiscordClient(discord.Client):
 
             dtnow = datetime.datetime.now(self.timezone)
             # upcoming games list (channel topic)
-            # this has some repeating lines but it.. works
+            gameslist_prefix = None
+            # if one of the upcoming runs:
             if 0 < len(self.gameslist) < upcoming_runs+1:
                 htime = humanize.naturaltime(starts_at.astimezone(local_timezone).replace(tzinfo=None))
-                htime = htime[0].upper() + htime[1:]
-                runline = f"{htime}: {gamename} ({category}) by "
-                self.gameslist.append(runline + human_runners)
-                self.embedlist.append(runline + human_runners_linked)
+                gameslist_prefix = htime[0].upper() + htime[1:]  # capitalize first letter
+            # if current run:
             elif starts_at <= dtnow < isoparse(run_data['endtime']).astimezone(self.timezone):
-                prefix += '➡️ '
-                runline = f"Current Game: {gamename} ({category}) by "
+                prefix += "\N{BLACK RIGHTWARDS ARROW} "
+                gameslist_prefix = "Current Game"
+            # if one of the above two if statements executed
+            if gameslist_prefix:
+                runline = f"{gameslist_prefix}: **{gamename}** ({category}) by "
                 self.gameslist.append(runline + human_runners)
                 self.embedlist.append(runline + human_runners_linked)
 
