@@ -28,6 +28,13 @@ gdq_url = "https://gamesdonequick.com/tracker/search/"
 #   'twitch_name': 'Mario Kart 8' -- what the game will be set to on Twitch, often missing. probably only added when an exception is needed
 name_display = 'name'
 
+# emojis for social media display. ints/IDs are interpreted as custom emoji IDs
+emojis = {
+    "twitter": 745753387899027578,
+    "twitch": 745796158839849071,
+    "youtube": 745796127848136774
+}
+
 # how many upcoming runs to display (not including the current run) in channel topic/embed
 upcoming_runs = 3
 
@@ -120,11 +127,14 @@ class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.event: str = None
-        self.timezone: pytz.timezone = None
+        self.author = "@lexikiq#0493"  # me, the bot creator :)
+
+        self.social_emoji = {}  # emojis used for social media links
+        self.event: str = None  # name of the event
+        self.timezone: pytz.timezone = None  # timezone of the event
         self.donation_milestones = []  # ping% milestones that have been reached
         self.first_donation_check = True  # if this is the ping% init
-        self.username_cache = {}
+        self.username_cache = {}  # cache of username data
 
         # create the background task and run it in the background
         self.bg_task = self.loop.create_task(self.my_background_task())
@@ -200,7 +210,16 @@ class DiscordClient(discord.Client):
                 data = await self.runner_name(rid)
                 runner_name = discord.utils.escape_markdown(data['name'])
                 runners.append(runner_name)
-                runners_linked.append("[{}]({})".format(runner_name, data['stream']) if data['stream'] else runner_name)
+                # this isn't actively used anymore, but keeping incase it changes in the future
+                # if this ever does get used again, i should use /c/ as a backup if /user/ 404's because youtube dumb
+                stream_url = data['stream'] if data['platform'] == 'TWITCH' else "https://youtube.com/user/"+data['youtube']
+                if stream_url:
+                    runner_name = "[{} {}]({})".format(runner_name, self.social_emoji['twitch'], stream_url)
+                if data['twitter']:
+                    runner_name += " [{}](https://twitter.com/{})".format(self.social_emoji['twitter'], data['twitter'])
+                if data['youtube'] and data['platform'] == 'TWITCH':
+                    runner_name += " [{}](https://youtube.com/user/{})".format(self.social_emoji['youtube'], data['youtube'])
+                runners_linked.append(runner_name)
             human_runners = comma_format(runners)  # -> format with commas
             human_runners_linked = comma_format(runners_linked)
 
@@ -278,14 +297,15 @@ class DiscordClient(discord.Client):
         if is_embed:
             if outputmsg:
                 embed = discord.Embed(title="{} Run Roster".format(self.event.upper()),
-                                      description="Watch live at [twitch.tv/gamesdonequick](https://twitch.tv/gamesdonequick)",
+                                      description=f"Bot created by {self.author}\n"
+                                                  f"Watch live at [{self.social_emoji['twitch']} GamesDoneQuick](https://twitch.tv/gamesdonequick)",
                                       timestamp=datetime.datetime.utcnow(), color=0x3bb830)
                 for run in outputmsg:
                     # from the self.embedlist, the messages take the format of "Current Run: Game (Category) by Runners"
                     run_when = run.split(':')[0].strip()
                     run_desc = ':'.join(run.split(':')[1:]).strip()
                     embed.add_field(name=run_when, value=run_desc, inline=False)
-                    embed.set_footer(text="gamesdonequick.com/schedule")
+                    embed.set_footer(text="Last updated:")
             outputmsg = None
         output_args = {False: {"args": [outputmsg], "kwargs": {}}, True: {"args": [], "kwargs": {"embed": embed}}}
 
@@ -317,17 +337,31 @@ class DiscordClient(discord.Client):
 
     async def my_background_task(self):
         await self.wait_until_ready()
+        # load emojis
+        for key, emoji in emojis.items():
+            if isinstance(emoji, int):
+                disc_emoji = self.get_emoji(emoji)
+                if disc_emoji:
+                    emoji = str(disc_emoji)
+            self.social_emoji[key] = emoji
+        # load embed author
+        lexi = self.get_user(140564059417346049)
+        if lexi:
+            self.author = lexi.mention
+        # load session
         global session
         session = aiohttp.ClientSession()
+        # load event info
         index = await load_gdq_index()
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
+        # get channel
         rushschd = self.get_channel(schedule_channel_id)
         init = True
 
         # Start background loop
         while not self.is_closed():
-            # remove a redundant API call
+            # avoid an redundant API call
             if not init:
                 index = await load_gdq_index()
             else:
