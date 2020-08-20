@@ -239,7 +239,7 @@ class DiscordClient(discord.Client):
                 gameslist_prefix = "Current Game"
             # if one of the above two if statements executed
             if gameslist_prefix:
-                runline = f"{gameslist_prefix}: **{gamename}** ({category}) by "
+                runline = f"{gameslist_prefix}: {gamename} ({category}) by "
                 self.gameslist.append(runline + human_runners)
                 self.embedlist.append(runline + human_runners_linked)
 
