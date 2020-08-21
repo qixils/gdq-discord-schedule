@@ -27,6 +27,7 @@ local_timezone = pytz.timezone(config['local_timezone'])
 murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
+murph = 187684157181132800
 # donation prediction game file
 predictions = json.load(open('predictions.json', 'r'))
 
@@ -366,7 +367,8 @@ class DiscordClient(discord.Client):
                 for x in murph_donations:
                     if donations >= x and x not in self.donation_milestones:
                         if not self.first_donation_check:
-                            await rushschd.guild.get_channel(murph_channel_id).send(f"<@187684157181132800> ${x}")
+                            await rushschd.guild.get_channel(murph_channel_id)\
+                                .send(f"<@{murph}> ${x}", allowed_mentions=discord.AllowedMentions(users=self.get_user(murph)))
                         self.donation_milestones.append(x)
 
                 loser = ""
@@ -411,5 +413,5 @@ class DiscordClient(discord.Client):
             await asyncio.sleep(60 * wait_minutes)
 
 
-client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=None, roles=None, everyone=None))
+client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
 client.run(config['token'], bot=True)
