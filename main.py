@@ -395,4 +395,4 @@ class DiscordClient(discord.Client):
 
 
 client = DiscordClient()
-client.run(open('token.txt', 'r').read().split('\n')[0], bot=True)
+client.run(config['token'], bot=True)
