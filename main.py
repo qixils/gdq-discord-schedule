@@ -343,7 +343,10 @@ class DiscordClient(discord.Client):
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
         # get channel
+        assert config['schedule_channel'] is int
+
         rushschd = self.get_channel(config['schedule_channel'])
+        assert rushschd is not None
         init = True
 
         # Start background loop

@@ -10,7 +10,7 @@ token: ""
 event_id: 30
 
 # ID of the channel to maintain the schedule in
-schedule_channel: 460520708414504960
+schedule_channel: 460520708414504961
 
 # Your local timezone for displaying the correct times in the Run Roster
 # see pytz.common_timezones: https://gist.github.com/lexikiq/66fdfb42c69786f13b7f59be4ea311d4
