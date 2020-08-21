@@ -21,7 +21,7 @@ local_timezone = pytz.timezone(config['local_timezone'])
 
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
 # set this variable to None to disable
-murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 10000)) + list(range(1000000, 10000000, 50000))
+murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
 
@@ -277,9 +277,10 @@ class DiscordClient(discord.Client):
         embed = None
         if is_embed:
             if outputmsg:
-                embed = discord.Embed(title="{} Run Roster".format(self.event.upper()),
+                s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
+                embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
                                       description=f"Bot created by {self.author}\n"
-                                                  f"Watch live at [{self.social_emoji['twitch']} GamesDoneQuick](https://twitch.tv/gamesdonequick)",
+                                                  f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
                                       timestamp=datetime.datetime.utcnow(), color=0x3bb830)
                 for run in outputmsg:
                     # from the self.embedlist, the messages take the format of "Current Run: Game (Category) by Runners"
