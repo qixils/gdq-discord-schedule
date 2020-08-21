@@ -368,8 +368,8 @@ class DiscordClient(discord.Client):
                 for x in murph_donations:
                     if donations >= x and x not in self.donation_milestones:
                         if not self.first_donation_check:
-                            await rushschd.guild.get_channel(murph_channel_id)\
-                                .send(f"<@{murph}> ${x}", allowed_mentions=discord.AllowedMentions(users=self.get_user(murph)))
+                            await self.get_channel(murph_channel_id)\
+                                .send(f"<@{murph}> ${x}", allowed_mentions=discord.AllowedMentions(users=[self.get_user(murph)]))
                         self.donation_milestones.append(x)
 
                 loser = ""
@@ -384,7 +384,7 @@ class DiscordClient(discord.Client):
                             winner = "The next closest prediction is <@{}>'s guess of ${:,.2f}.".format(prediction['ping'], prediction['amount'])
                     pass
                 if not self.first_donation_check and loser and winner:
-                    await rushschd.guild.get_channel(murph_channel_id).send(f"{loser}\n{winner}")
+                    await self.get_channel(murph_channel_id).send(f"{loser}\n{winner}")
             self.first_donation_check = False
 
             try:  # the SCHEDULE
