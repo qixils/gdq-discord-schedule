@@ -31,9 +31,9 @@ run_name_display: name
 
 # IDs for emojis for displaying social medias. can also use strings. if emojis aren't found they won't be used
 emojis:
-  twitter: 745753387899027600
-  twitch: 745796158839849100
-  youtube: 745796127848136800
+  twitter: 745753387899027578
+  twitch: 745796158839849071
+  youtube: 745796127848136774
 
 # Number of upcoming runs to display in the Run Roster
 upcoming_runs: 3
