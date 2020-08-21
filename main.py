@@ -7,49 +7,27 @@ import discord
 import aiohttp
 import humanize
 from dateutil.parser import *
+from yaml import load
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 
-# CHANGE THESE VARIABLES
-# ID of the event in the API. Get from https://gamesdonequick.com/tracker/search/?type=event
-# ESA: https://donations.esamarathon.com/search/?type=event
-eventID = 30
-
-# Discord channel to post the schedule to
-schedule_channel_id = 460520708414504961
-
-
-# OPTIONAL VARIABLES
-# URL for GDQ's API. can also use donation trackers forked from GDQ's, ie ESA: "https://donations.esamarathon.com/search/"
-gdq_url = "https://gamesdonequick.com/tracker/search/"
-
-# name options/examples:
-#   'name': 'Bonus Game 2 - Mario Kart 8 Deluxe' -- what appears on the schedule/index. some events use 'Setup Block X'
-#   'display_name': 'Mario Kart 8 Deluxe' -- actual game name
-#   'twitch_name': 'Mario Kart 8' -- what the game will be set to on Twitch, often missing. probably only added when an exception is needed
-name_display = 'name'
-
-# emojis for social media display. ints/IDs are interpreted as custom emoji IDs
-emojis = {
-    "twitter": 745753387899027578,
-    "twitch": 745796158839849071,
-    "youtube": 745796127848136774
-}
-
-# how many upcoming runs to display (not including the current run) in channel topic/embed
-upcoming_runs = 3
+config = load(open('config.yaml', 'r'), Loader)
 
 # local timezone for appropriately displaying when the upcoming run is
-local_timezone = pytz.timezone('US/Eastern')
+local_timezone = pytz.timezone(config['local_timezone'])
 
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
-# set to None to disable
+# set this variable to None to disable
 murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 10000)) + list(range(1000000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
 
-# request headers, generally shouldn't change
+# request headers
 gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
-reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellekiq)"}}
+reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellekiq)"}}  # add your own reddit username here?
 
 # aiohttp session, do not change
 session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
@@ -61,7 +39,7 @@ async def load_gdq_json(query):
     :param query: the search parameters to query
     :return: json object
     """
-    url = f"{gdq_url}{query}"
+    url = f"{config['gdq_url']}{query}"
     async with session.get(url, **gdq_headers) as r:
         if r.status == 200:
             jsondata = await r.json()
@@ -80,7 +58,7 @@ async def load_gdq_index():
     Returns the GDQ index (main) page, includes donation totals
     :return: json object
     """
-    return (await load_gdq_json(f'?type=event&id={eventID}'))[0]['fields']
+    return (await load_gdq_json(f"?type=event&id={config['event_id']}"))[0]['fields']
 
 
 async def load_json_from_reddit(wiki_page, subreddit="VODThread", log_errors: bool = True):
@@ -156,7 +134,7 @@ class DiscordClient(discord.Client):
         Processes the human-readable schedule.
         :return: list of runs
         """
-        schedule = await load_gdq_json(f"?type=run&event={eventID}")
+        schedule = await load_gdq_json(f"?type=run&event={config['event_id']}")
         # Header Message
         index = await load_gdq_index()
         dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at " \
@@ -173,7 +151,7 @@ class DiscordClient(discord.Client):
         gdqvods = await load_json_from_reddit(f'{self.event}vods')
         gdqytvods = await load_json_from_reddit(f'{self.event}yt', log_errors=False)
         runcount = 0
-        bids = await load_gdq_json(f"?type=bid&event={eventID}")
+        bids = await load_gdq_json(f"?type=bid&event={config['event_id']}")
         biddex = {}
         current_date = datetime.date(year=1970, month=1, day=15)  # for splitting schedule by end of day
         # pre-prepare bids (more efficient than repeatedly iterating through every bid)
@@ -200,7 +178,7 @@ class DiscordClient(discord.Client):
             #   'name': 'Bonus Game 2 - Mario Kart 8 Deluxe' -- what appears on the schedule/index
             #   'display_name': 'Mario Kart 8 Deluxe' -- actual game name
             #   'twitch_name': 'Mario Kart 8' -- what the game will be set to on Twitch, often missing
-            gamename = run_data[name_display]
+            gamename = run_data[config['run_name_display']]
             category = run_data['category']
 
             # get runner names and their twitches linked for the final embed
@@ -214,10 +192,11 @@ class DiscordClient(discord.Client):
                 # if this ever does get used again, i should use /c/ as a backup if /user/ 404's because youtube dumb
                 stream_url = data['stream'] if data['platform'] == 'TWITCH' else "https://youtube.com/user/"+data['youtube']
                 if stream_url:
-                    runner_name = "[{} {}]({})".format(runner_name, self.social_emoji['twitch'], stream_url)
-                if data['twitter']:
+                    name_temp = "{} {}".format(runner_name, self.social_emoji['twitch']).strip()
+                    runner_name = "[{}]({})".format(name_temp, stream_url)
+                if data['twitter'] and self.social_emoji['twitter']:
                     runner_name += " [{}](https://twitter.com/{})".format(self.social_emoji['twitter'], data['twitter'])
-                if data['youtube'] and data['platform'] == 'TWITCH':
+                if data['youtube'] and data['platform'] == 'TWITCH' and self.social_emoji['youtube']:
                     runner_name += " [{}](https://youtube.com/user/{})".format(self.social_emoji['youtube'], data['youtube'])
                 runners_linked.append(runner_name)
             human_runners = comma_format(runners)  # -> format with commas
@@ -230,7 +209,7 @@ class DiscordClient(discord.Client):
             # upcoming games list (channel topic)
             gameslist_prefix = None
             # if one of the upcoming runs:
-            if 0 < len(self.gameslist) < upcoming_runs+1:
+            if 0 < len(self.gameslist) < config['upcoming_runs']+1:
                 htime = humanize.naturaltime(starts_at.astimezone(local_timezone).replace(tzinfo=None))
                 gameslist_prefix = htime[0].upper() + htime[1:]  # capitalize first letter
             # if current run:
@@ -340,11 +319,13 @@ class DiscordClient(discord.Client):
     async def my_background_task(self):
         await self.wait_until_ready()
         # load emojis
-        for key, emoji in emojis.items():
+        for key, emoji in config['emojis'].items():
             if isinstance(emoji, int):
                 disc_emoji = self.get_emoji(emoji)
                 if disc_emoji:
                     emoji = str(disc_emoji)
+                else:
+                    emoji = ""
             self.social_emoji[key] = emoji
         # load embed author
         lexi = self.get_user(140564059417346049)
@@ -358,7 +339,7 @@ class DiscordClient(discord.Client):
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
         # get channel
-        rushschd = self.get_channel(schedule_channel_id)
+        rushschd = self.get_channel(config['schedule_channel'])
         init = True
 
         # Start background loop

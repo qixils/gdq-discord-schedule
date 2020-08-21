@@ -3,3 +3,4 @@ aiohttp
 humanize
 pytz
 python-dateutil
+pyyaml

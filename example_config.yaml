@@ -1,0 +1,40 @@
+---
+# Copy this file to `config.yaml`
+# The fields "token", "event_id", "schedule_channel", and "local_timezone" should be changed.
+
+# Enter your Discord bot token here. Never share this file without removing this
+token: ""
+
+# ID of the event in the API. Get from https://gamesdonequick.com/tracker/search/?type=event
+# Find ESA event IDs: https://donations.esamarathon.com/search/?type=event (see gdq_url later for more info)
+event_id: 30
+
+# ID of the channel to maintain the schedule in
+schedule_channel: 460520708414504960
+
+# Your local timezone for displaying the correct times in the Run Roster
+# see pytz.common_timezones: https://gist.github.com/lexikiq/66fdfb42c69786f13b7f59be4ea311d4
+local_timezone: US/Eastern
+
+# URL for GDQ API
+# Can also use GDQ-based APIs, ie. ESA: "https://donations.esamarathon.com/search/"
+gdq_url: https://gamesdonequick.com/tracker/search/
+
+# Twitch channel to link to in the Run Roster
+twitch_channel: GamesDoneQuick
+
+# Option for displaying the name of runs on the schedule. Options:
+#   'name': 'Bonus Game 2 - Mario Kart 8 Deluxe' -- what appears on the schedule/index, changes from event to event
+#   'display_name': 'Mario Kart 8 Deluxe' -- actual game name
+#   'twitch_name': 'Mario Kart 8' -- what the game will be set to on Twitch, often missing. probably only added when an exception is needed
+run_name_display: name
+
+# IDs for emojis for displaying social medias. can also use strings. if emojis aren't found they won't be used
+emojis:
+  twitter: 745753387899027600
+  twitch: 745796158839849100
+  youtube: 745796127848136800
+
+# Number of upcoming runs to display in the Run Roster
+upcoming_runs: 3
+
