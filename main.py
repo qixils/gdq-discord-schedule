@@ -122,6 +122,21 @@ class DiscordClient(discord.Client):
 
         # create the background task and run it in the background
         self.bg_task = self.loop.create_task(self.my_background_task())
+        self.tie_lock = asyncio.Lock()
+        self.tie_tracker = {}
+
+    async def on_message(self, message: discord.Message):
+        if message.mentions:
+            if discord.utils.get(message.mentions, id=murph):
+                authid = message.author.id
+                created = message.created_at
+                async with self.tie_lock:
+                    if created not in self.tie_tracker:
+                        self.tie_tracker[created] = [authid]
+                    else:
+                        users = list(map(self.get_user, self.tie_tracker[created] + [authid]))
+                        await self.get_channel(murph_channel_id).send("{} tied in Ping%!".format(comma_format(users)))
+                    self.tie_tracker[created].append(authid)
 
     async def runner_name(self, runner_id):
         """
