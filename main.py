@@ -349,6 +349,7 @@ class DiscordClient(discord.Client):
         rushschd = self.get_channel(config['schedule_channel'])
         assert rushschd is not None
         init = True
+        lost = []  # incorrect guesses for donation incentive game
 
         # Start background loop
         while not self.is_closed():
@@ -373,7 +374,6 @@ class DiscordClient(discord.Client):
 
                 loser = ""
                 winner = ""
-                lost = []
                 for prediction in predictions:
                     if prediction['ping'] not in lost:
                         if donations > prediction['max']:
