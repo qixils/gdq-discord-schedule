@@ -27,6 +27,8 @@ local_timezone = pytz.timezone(config['local_timezone'])
 murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
+# donation prediction game file
+predictions = json.load(open('predictions.json', 'r'))
 
 # request headers
 gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
@@ -362,12 +364,26 @@ class DiscordClient(discord.Client):
             await client.change_presence(activity=activ)
             if murph_donations is not None:
                 for x in murph_donations:
-                    if donations >= x:
-                        if x not in self.donation_milestones:
-                            if not self.first_donation_check:
-                                await rushschd.guild.get_channel(murph_channel_id).send(f"<@187684157181132800> ${x}")
-                            self.donation_milestones.append(x)
-                self.first_donation_check = False
+                    if donations >= x and x not in self.donation_milestones:
+                        if not self.first_donation_check:
+                            await rushschd.guild.get_channel(murph_channel_id).send(f"<@187684157181132800> ${x}")
+                        self.donation_milestones.append(x)
+
+                loser = ""
+                winner = ""
+                lost = []
+                for prediction in predictions:
+                    if prediction['ping'] not in lost:
+                        if donations > prediction['max']:
+                            lost.append(prediction['ping'])
+                            if not loser:
+                                loser = "<@{}>'s donation total prediction of ${:,.2f} has been surpassed.".format(prediction['ping'], prediction['amount'])
+                        elif loser and not winner:  # i don't *need* the 'if loser' part buut it feels safer
+                            winner = "The next closest prediction is <@{}>'s guess of ${:,.2f}.".format(prediction['ping'], prediction['amount'])
+                    pass
+                if not self.first_donation_check and loser and winner:
+                    await rushschd.guild.get_channel(murph_channel_id).send(f"{loser}\n{winner}")
+            self.first_donation_check = False
 
             try:  # the SCHEDULE
                 # reset variables
@@ -395,5 +411,5 @@ class DiscordClient(discord.Client):
             await asyncio.sleep(60 * wait_minutes)
 
 
-client = DiscordClient()
+client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=None, roles=None, everyone=None))
 client.run(config['token'], bot=True)
