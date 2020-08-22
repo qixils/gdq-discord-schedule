@@ -22,15 +22,6 @@ config['upcoming_runs'] = int(config['upcoming_runs'])
 # local timezone for appropriately displaying when the upcoming run is
 local_timezone = pytz.timezone(config['local_timezone'])
 
-# Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
-# set this variable to None to disable
-murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
-# channel ID for murphy's game
-murph_channel_id = 442082610785550337
-murph = 187684157181132800
-# donation prediction game file
-predictions = json.load(open('predictions.json', 'r'))
-
 # request headers
 gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
 reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellekiq)"}}  # add your own reddit username here?
@@ -116,27 +107,10 @@ class DiscordClient(discord.Client):
         self.social_emoji = {}  # emojis used for social media links
         self.event: str = None  # name of the event
         self.timezone: pytz.timezone = None  # timezone of the event
-        self.donation_milestones = []  # ping% milestones that have been reached
-        self.first_donation_check = True  # if this is the ping% init
         self.username_cache = {}  # cache of username data
 
         # create the background task and run it in the background
         self.bg_task = self.loop.create_task(self.my_background_task())
-        self.tie_lock = asyncio.Lock()
-        self.tie_tracker = {}
-
-    async def on_message(self, message: discord.Message):
-        if message.mentions:
-            if discord.utils.get(message.mentions, id=murph):
-                authid = message.author.id
-                created = message.created_at
-                async with self.tie_lock:
-                    if created not in self.tie_tracker:
-                        self.tie_tracker[created] = [authid]
-                    else:
-                        users = list(map(self.get_user, self.tie_tracker[created] + [authid]))
-                        await self.get_channel(murph_channel_id).send("{} tied in Ping%!".format(comma_format(users)))
-                    self.tie_tracker[created].append(authid)
 
     async def runner_name(self, runner_id):
         """
@@ -364,7 +338,6 @@ class DiscordClient(discord.Client):
         rushschd = self.get_channel(config['schedule_channel'])
         assert rushschd is not None
         init = True
-        lost = []  # incorrect guesses for donation incentive game
 
         # Start background loop
         while not self.is_closed():
@@ -379,28 +352,6 @@ class DiscordClient(discord.Client):
             donomsg = f"${donations:,.2f} donations"
             activ = discord.Activity(type=discord.ActivityType.watching, name=donomsg)
             await client.change_presence(activity=activ)
-            if murph_donations is not None:
-                for x in murph_donations:
-                    if donations >= x and x not in self.donation_milestones:
-                        if not self.first_donation_check:
-                            await self.get_channel(murph_channel_id)\
-                                .send(f"<@{murph}> ${x}", allowed_mentions=discord.AllowedMentions(users=[self.get_user(murph)]))
-                        self.donation_milestones.append(x)
-
-                loser = ""
-                winner = ""
-                for prediction in predictions:
-                    if prediction['ping'] not in lost:
-                        if donations > prediction['max']:
-                            lost.append(prediction['ping'])
-                            if not loser:
-                                loser = "<@{}>'s donation total prediction of ${:,.2f} has been surpassed.".format(prediction['ping'], prediction['amount'])
-                        elif loser and not winner:  # i don't *need* the 'if loser' part buut it feels safer
-                            winner = "The next closest prediction is <@{}>'s guess of ${:,.2f}.".format(prediction['ping'], prediction['amount'])
-                    pass
-                if not self.first_donation_check and loser and winner:
-                    await self.get_channel(murph_channel_id).send(f"{loser}\n{winner}")
-            self.first_donation_check = False
 
             try:  # the SCHEDULE
                 # reset variables
@@ -424,8 +375,7 @@ class DiscordClient(discord.Client):
 
             await rushschd.edit(topic='\n\n'.join(self.gameslist))
 
-            wait_minutes = 15
-            await asyncio.sleep(60 * wait_minutes)
+            await asyncio.sleep(60 * config['wait_minutes'])
 
 
 client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))

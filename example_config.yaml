@@ -38,3 +38,5 @@ emojis:
 # Number of upcoming runs to display in the Run Roster
 upcoming_runs: 3
 
+# Minutes to wait in between checking the schedule
+wait_minutes: 15
