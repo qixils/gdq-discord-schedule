@@ -104,7 +104,7 @@ class DiscordClient(discord.Client):
         self.social_emoji = {}  # emojis used for social media links
         self.event: str = None  # name of the event
         self.timezone: pytz.timezone = None  # timezone of the event
-        self.username_cache = {}  # cache of username data
+        self.runners = {}  # dict of runner_id: fields
 
         # create the background task and run it in the background
         self.bg_task = self.loop.create_task(self.my_background_task())
@@ -113,13 +113,9 @@ class DiscordClient(discord.Client):
         """
         Returns the corresponding runner username for a runner ID
         :param runner_id: integer for runner ID
-        :return: string of runner's username
+        :return: returns runner fields
         """
-        if runner_id not in self.username_cache:
-            self.username_cache[runner_id] = (await load_gdq_json(f"?type=runner&id={runner_id}"))[0]['fields']
-            # fields: 'stream' (full URL), 'twitter' (just the username), 'youtube' (often blank),
-            # 'platform' (seen value of "TWITCH"), 'pronouns'
-        return self.username_cache[runner_id]
+        return self.runners[runner_id]
 
     async def human_schedule(self):
         """
@@ -331,6 +327,8 @@ class DiscordClient(discord.Client):
         index = await load_gdq_index()
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])
+        for runner_raw_data in (await load_gdq_json(f"?type=runner&event={config['event_id']}")):
+            self.runners[runner_raw_data['pk']] = runner_raw_data['fields']
         # get channel
         rushschd = self.get_channel(config['schedule_channel'])
         assert rushschd is not None
