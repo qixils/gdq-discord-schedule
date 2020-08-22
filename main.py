@@ -15,9 +15,6 @@ except ImportError:
 
 
 config = load(open('config.yaml', 'r'), Loader)
-config['event_id'] = int(config['event_id'])
-config['schedule_channel'] = int(config['schedule_channel'])
-config['upcoming_runs'] = int(config['upcoming_runs'])
 
 # local timezone for appropriately displaying when the upcoming run is
 local_timezone = pytz.timezone(config['local_timezone'])

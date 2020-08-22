@@ -13,7 +13,6 @@ except ImportError:
 
 
 config = load(open('config.yaml', 'r'), Loader)
-config['event_id'] = int(config['event_id'])  # idk if this is needed, probs not, im just paranoid
 
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
 # set this variable to None to disable
@@ -75,6 +74,10 @@ class GDQGames(discord.Client):
 
         self.gamer.start()  # start game loop
 
+    async def on_ready(self):
+        print('Logged in as {0!s} ({0.id})'.format(self.user))
+        print('---')
+
     async def on_message(self, message: discord.Message):
         if message.mentions:
             if discord.utils.get(message.mentions, id=murph):
@@ -88,7 +91,7 @@ class GDQGames(discord.Client):
                         await self.get_channel(murph_channel_id).send("{} tied in Ping%!".format(comma_format(users)))
                     self.tie_tracker[created].append(authid)
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(seconds=7.0)
     async def gamer(self):
         try:
             index = await load_gdq_index()
@@ -97,9 +100,19 @@ class GDQGames(discord.Client):
             for x in murph_donations:
                 if donations >= x and x not in self.donation_milestones:
                     if not self.first_donation_check:
-                        await self.get_channel(murph_channel_id) \
-                            .send(f"<@{murph}> ${x:,}",
-                                  allowed_mentions=discord.AllowedMentions(users=[self.get_user(murph)]))
+                        totals = list(map(int, f"{x:,}".split(',')))
+                        if len(totals) == 2:
+                            y = f"{totals[0]}K"
+                        elif len(totals) == 3:
+                            decimal = f".{str(totals[1])[:2]}"
+                            while decimal.endswith('0') or decimal.endswith('.'):
+                                decimal = decimal[:-1]
+                            y = f"{totals[0]}{decimal}M"
+                        else:  # weird edge case?? use legacy message
+                            y = f"${x:,}"
+                        out = f"<@{murph}> {y}"
+                        mentions = discord.AllowedMentions(users=[self.get_user(murph)])
+                        await self.get_channel(murph_channel_id).send(out, allowed_mentions=mentions)
                     self.donation_milestones.append(x)
 
             loser = ""
@@ -123,6 +136,8 @@ class GDQGames(discord.Client):
 
     @gamer.before_loop
     async def before_gamer(self):
+        global session
+        session = aiohttp.ClientSession()
         await self.wait_until_ready()
 
 
