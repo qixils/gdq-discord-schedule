@@ -270,6 +270,9 @@ class DiscordClient(discord.Client):
         if is_embed:
             if outputmsg:
                 s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
+                desc = [f"Bot created by {self.author}",
+                        f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
+                        f"Updates every {config['wait_minutes']} minutes"]
                 embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
                                       description=f"Bot created by {self.author}\n"
                                                   f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
