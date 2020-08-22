@@ -104,7 +104,7 @@ class GDQGames(discord.Client):
                         if len(totals) == 2:
                             y = f"{totals[0]}K"
                         elif len(totals) == 3:
-                            decimal = f".{str(totals[1]):03}"
+                            decimal = f".{totals[1]:03}"
                             while decimal.endswith('0') or decimal.endswith('.'):
                                 decimal = decimal[:-1]
                             y = f"{totals[0]}{decimal}M"
