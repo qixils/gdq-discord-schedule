@@ -180,15 +180,13 @@ class DiscordClient(discord.Client):
                 data = await self.runner_name(rid)
                 runner_name = discord.utils.escape_markdown(data['name'])
                 runners.append(runner_name)
-                # this isn't actively used anymore, but keeping incase it changes in the future
-                # if this ever does get used again, i should use /c/ as a backup if /user/ 404's because youtube dumb
-                stream_url = data['stream'] if data['platform'] == 'TWITCH' else "https://youtube.com/user/"+data['youtube']
+                stream_url = data['stream']
                 if stream_url:
                     name_temp = "{} {}".format(runner_name, self.social_emoji['twitch']).strip()
                     runner_name = "[{}]({})".format(name_temp, stream_url)
                 if data['twitter'] and self.social_emoji['twitter']:
                     runner_name += " [{}](https://twitter.com/{})".format(self.social_emoji['twitter'], data['twitter'])
-                if data['youtube'] and data['platform'] == 'TWITCH' and self.social_emoji['youtube']:
+                if data['youtube'] and data['platform'] != 'YOUTUBE' and self.social_emoji['youtube']:
                     runner_name += " [{}](https://youtube.com/user/{})".format(self.social_emoji['youtube'], data['youtube'])
                 runners_linked.append(runner_name)
             human_runners = comma_format(runners)  # -> format with commas
