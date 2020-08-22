@@ -271,8 +271,8 @@ class DiscordClient(discord.Client):
             if outputmsg:
                 s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
                 desc = [f"Bot created by {self.author}",
-                        f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
-                        f"Updates every {config['wait_minutes']} minutes"]
+                        f"Updates every {config['wait_minutes']} minutes",
+                        f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
                 embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
                                       description='\n'.join(desc),
                                       timestamp=datetime.datetime.utcnow(), color=0x3bb830)
