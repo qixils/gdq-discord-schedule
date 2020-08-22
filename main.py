@@ -274,8 +274,7 @@ class DiscordClient(discord.Client):
                         f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
                         f"Updates every {config['wait_minutes']} minutes"]
                 embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
-                                      description=f"Bot created by {self.author}\n"
-                                                  f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})",
+                                      description='\n'.join(desc),
                                       timestamp=datetime.datetime.utcnow(), color=0x3bb830)
                 for run in outputmsg:
                     # from the self.embedlist, the messages take the format of "Current Run: Game (Category) by Runners"
