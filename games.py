@@ -1,5 +1,7 @@
 import asyncio
 import json
+from statistics import mean
+from operator import sub
 import traceback
 
 import aiohttp
@@ -28,6 +30,9 @@ session: aiohttp.ClientSession = None  # gets defined later because it yelled at
 
 # request headers
 gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
+
+run_every = 10.0
+all_donation_length = 6 + 1
 
 
 async def load_gdq_json(query):
@@ -72,6 +77,10 @@ class GDQGames(discord.Client):
         self.tie_tracker = {}  # dict of datetime's to track ties in ping%
         self.lost = []  # users whose predictions have lost
 
+        self.donations = 0
+        self.all_donations = []
+        self.prefix = 't!'
+
         self.gamer.start()  # start game loop
 
     async def on_ready(self):
@@ -79,6 +88,16 @@ class GDQGames(discord.Client):
         print('---')
 
     async def on_message(self, message: discord.Message):
+        if message.content.startswith(self.prefix):
+            cmd = message.content.replace(self.prefix, '', 1)
+            if cmd in ['donations', 'totals', 'total', 'amount', 'raised']:
+                await message.channel.send(f"${self.donations:,.2f}")
+            elif cmd in ['rate']:
+                if len(self.all_donations) <= 1:
+                    await message.channel.send(f"Not enough data yet, please wait")
+                else:
+                    rate = list(map(sub, self.all_donations[1:], self.all_donations[:-1]))
+                    await message.channel.send(f"Average donation rate per {len(run_every)} seconds over the past {int(run_every*len(rate))} seconds: ${mean(rate):,.2f}")
         if message.mentions:
             if discord.utils.get(message.mentions, id=murph):
                 authid = message.author.id
@@ -91,14 +110,17 @@ class GDQGames(discord.Client):
                         await self.get_channel(murph_channel_id).send("{} tied in Ping%!".format(comma_format(users)))
                     self.tie_tracker[created].append(authid)
 
-    @tasks.loop(seconds=7.0)
+    @tasks.loop(seconds=run_every)
     async def gamer(self):
         try:
             index = await load_gdq_index()
-            donations = float(index['amount'])
+            self.donations = float(index['amount'])
+            self.all_donations.append(self.donations)
+            while len(self.all_donations) > all_donation_length:
+                del self.all_donations[0]
 
             for x in murph_donations:
-                if donations >= x and x not in self.donation_milestones:
+                if self.donations >= x and x not in self.donation_milestones:
                     if not self.first_donation_check:
                         totals = list(map(int, f"{x:,}".split(',')))
                         if len(totals) == 2:
@@ -120,7 +142,7 @@ class GDQGames(discord.Client):
             users = []
             for prediction in predictions:
                 if prediction['ping'] not in self.lost:
-                    if donations > prediction['max']:
+                    if self.donations > prediction['max']:
                         self.lost.append(prediction['ping'])
                         if not loser:
                             user = self.get_user(prediction['ping'])
