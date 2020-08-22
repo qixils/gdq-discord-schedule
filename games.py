@@ -97,7 +97,7 @@ class GDQGames(discord.Client):
                     await message.channel.send(f"Not enough data yet, please wait")
                 else:
                     rate = list(map(sub, self.all_donations[1:], self.all_donations[:-1]))
-                    await message.channel.send(f"Average donation rate per {len(run_every)} seconds over the past {int(run_every*len(rate))} seconds: ${mean(rate):,.2f}")
+                    await message.channel.send(f"Average donation rate per {int(run_every)} seconds over the past {int(run_every*len(rate))} seconds: ${mean(rate):,.2f}")
         if message.mentions:
             if discord.utils.get(message.mentions, id=murph):
                 authid = message.author.id
