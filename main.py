@@ -146,12 +146,18 @@ class DiscordClient(discord.Client):
         # create index of bids, {run_id: [bid1, bid2, ...]}, for efficient bid iteration
         biddex = {}  # portmanteau of bid index, ha!
         for bidorigin in bids:
-            if bidorigin['fields']['biddependency'] is not None:  # idk what this is, i suspect it's for bid options?
-                continue  # but i've never seen it used...
             bidorigrunid = bidorigin['fields']['speedrun']
             if bidorigrunid not in biddex:
                 biddex[bidorigrunid] = []
-            biddex[bidorigrunid].append(bidorigin['fields'])
+            biddex[bidorigrunid].append(bidorigin)
+
+        # create index of bid options
+        optiondex = {}
+        for optorigin in bidoptions:
+            parentid = optorigin['fields']['parent']
+            if parentid not in optiondex:
+                optiondex[parentid] = []
+            optiondex[parentid].append(optorigin['fields'])
 
         # finally iterate through every run
         for runcount, run_data_base in enumerate(schedule):
@@ -215,18 +221,28 @@ class DiscordClient(discord.Client):
 
             if run_data_base['pk'] in biddex:
                 for bid_data in biddex[run_data_base['pk']]:
-                    isClosed = bid_data['state'] == 'CLOSED'
+                    bid_id = bid_data['pk']
+                    bid_data = bid_data['fields']
+                    is_closed = bid_data['state'] == 'CLOSED'
                     bidname = bid_data['name']
                     moneyraised = float(bid_data['total'])
                     if bid_data['goal'] is not None:
                         moneygoal = float(bid_data['goal'])
-                        emoji = '✅' if moneyraised >= moneygoal else '❌' if isClosed else '⚠️'
+                        emoji = '✅' if moneyraised >= moneygoal else '❌' if is_closed else '⚠️'
                         extradata = f"(${moneyraised:,.2f}/${moneygoal:,.2f}, {int((moneyraised / moneygoal) * 100)}%)"
                     else:
-                        emoji = '💰' if isClosed else '⏰'
+                        emoji = '💰' if is_closed else '⏰'
                         # TODO: haven't currently found a way to get bid war options but they must be somewhere...
                         # extradata = f"(${moneyraised:,.2f})"
-                        extradata = f"(<{bid_data['canonical_url']}>)"
+                        if bid_id in optiondex and optiondex[bid_id]:
+                            optfields = optiondex[bid_id]
+                            templist = [o2['name'] for o2 in sorted(optfields, reverse=True, key=lambda o1: float(o1['total']))[:3]]
+                            if len(optfields) > 3:
+                                templist.append('...')
+                            templist[0] = f"**{templist[0]}**"
+                            extradata = '/'.join(templist)
+                        else:
+                            extradata = f"(<{bid_data['canonical_url']}>)"
                     output.append(f"{emoji} {bidname} {extradata}")
 
             # gets VOD links from VODThread
