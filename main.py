@@ -276,20 +276,22 @@ class DiscordClient(discord.Client):
         is_embed = not isinstance(outputmsg, str)
         embed = None
         if is_embed:
+            s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
+            desc = [f"Bot created by {self.author}",
+                    f"Updates every {config['wait_minutes']} minutes",
+                    f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
+            embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
+                                  description='\n'.join(desc),
+                                  timestamp=datetime.datetime.utcnow(), color=0x3bb830)
+            embed.set_footer(text="Last updated:")
             if outputmsg:
-                s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
-                desc = [f"Bot created by {self.author}",
-                        f"Updates every {config['wait_minutes']} minutes",
-                        f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
-                embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
-                                      description='\n'.join(desc),
-                                      timestamp=datetime.datetime.utcnow(), color=0x3bb830)
                 for run in outputmsg:
                     # from the self.embedlist, the messages take the format of "Current Run: Game (Category) by Runners"
                     run_when = run.split(':')[0].strip()
                     run_desc = ':'.join(run.split(':')[1:]).strip()
                     embed.add_field(name=run_when, value=run_desc, inline=False)
-                    embed.set_footer(text="Last updated:")
+            else:
+                embed.add_field(name="N/A", value="The event has ended. Thank you all for watching and donating!")
             outputmsg = None
         output_args = {False: {"args": [outputmsg], "kwargs": {}}, True: {"args": [], "kwargs": {"embed": embed}}}
 
