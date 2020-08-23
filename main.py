@@ -244,8 +244,6 @@ class DiscordClient(discord.Client):
                     output.append(f"{emoji} {bidname} ({extradata})")
 
             # gets VOD links from VODThread
-            # TODO: look for a new source or do it manually? sometimes misses events (had none for CRDQ)
-            # TODO: add YT VODs from VODThread
             if len(gdqvods) - 1 >= runcount:
                 vodindex = gdqvods[runcount]
                 while vodindex:
