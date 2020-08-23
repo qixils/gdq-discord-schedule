@@ -338,6 +338,13 @@ class DiscordClient(discord.Client):
         global session
         session = aiohttp.ClientSession()
         # load event info
+        if not isinstance(config['event_id'], int):
+            orig_id = config['event_id']
+            events = await load_gdq_json(f"?type=event")
+            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'] == orig_id), None)
+            if config['event_id'] is None:
+                print(f"Could not find event {orig_id}")
+                exit()
         index = await load_gdq_index()
         self.event = index['short']
         self.timezone = pytz.timezone(index['timezone'])

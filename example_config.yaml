@@ -7,6 +7,7 @@ token: ""
 
 # ID of the event in the API. Get from https://gamesdonequick.com/tracker/search/?type=event
 # Find ESA event IDs: https://donations.esamarathon.com/search/?type=event (see gdq_url later for more info)
+# UPDATE: you can now use GDQ's shorthand as well, ie sgdq2020
 event_id: 30
 
 # ID of the channel to maintain the schedule in

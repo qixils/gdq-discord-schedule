@@ -166,6 +166,15 @@ class GDQGames(discord.Client):
     async def before_gamer(self):
         global session
         session = aiohttp.ClientSession()
+        print(config['event_id'])
+        if not isinstance(config['event_id'], int):
+            orig_id = config['event_id']
+            events = await load_gdq_json(f"?type=event")
+            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'] == orig_id), None)
+            if config['event_id'] is None:
+                print(f"Could not find event {orig_id}")
+                exit()
+        print(config['event_id'])
         await self.wait_until_ready()
 
 
