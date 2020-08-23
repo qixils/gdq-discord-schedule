@@ -71,6 +71,7 @@ def comma_format(input_list):
 class GDQGames(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.channel = None
         self.donation_milestones = []  # ping% milestones that have been reached
         self.first_donation_check = True  # if this is the ping% init
         self.tie_lock = asyncio.Lock()  # prevents race conditions
@@ -107,7 +108,7 @@ class GDQGames(discord.Client):
                         self.tie_tracker[created] = [authid]
                     else:
                         users = list(map(self.get_user, self.tie_tracker[created] + [authid]))
-                        await self.get_channel(murph_channel_id).send("{} tied in Ping%!".format(comma_format(users)))
+                        await self.channel.send("{} tied in Ping%!".format(comma_format(users)))
                     self.tie_tracker[created].append(authid)
 
     @tasks.loop(seconds=run_every)
@@ -134,7 +135,7 @@ class GDQGames(discord.Client):
                             y = f"${x:,}"
                         out = f"<@{murph}> {y}"
                         mentions = discord.AllowedMentions(users=[self.get_user(murph)])
-                        await self.get_channel(murph_channel_id).send(out, allowed_mentions=mentions)
+                        await self.channel.send(out, allowed_mentions=mentions)
                     self.donation_milestones.append(x)
 
             loser = ""
@@ -157,7 +158,7 @@ class GDQGames(discord.Client):
                 pass
             if not self.first_donation_check and loser and winner:
                 allowed = discord.AllowedMentions(users=users)
-                await self.get_channel(murph_channel_id).send(f"{loser}\n{winner}", allowed_mentions=allowed)
+                await self.channel.send(f"{loser}\n{winner}", allowed_mentions=allowed)
             self.first_donation_check = False
         except:
             traceback.print_exc()
@@ -176,6 +177,7 @@ class GDQGames(discord.Client):
                 exit()
 
         await self.wait_until_ready()
+        self.channel = self.get_channel(murph_channel_id)
 
 
 client = GDQGames(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
