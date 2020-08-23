@@ -38,8 +38,7 @@ async def load_gdq_json(query):
         if r.status == 200:
             jsondata = await r.json()
 
-            # self-ratelimit to avoid bullying the API. impacts the first run the most as it fills in the username cache,
-            # but further runs should only be affected by about 10 seconds.
+            # GDQ doesn't provide official ratelimits, so we apply our own safe amount
             await asyncio.sleep(2.5)
         else:
             print("GET {} returned {} {} -- aborting".format(url, r.status, await r.text()))
@@ -122,7 +121,13 @@ class DiscordClient(discord.Client):
         Processes the human-readable schedule.
         :return: list of runs
         """
+        # load pages
         schedule = await load_gdq_json(f"?type=run&event={config['event_id']}")
+        gdqvods = await load_json_from_reddit(f'{self.event}vods')
+        gdqytvods = await load_json_from_reddit(f'{self.event}yt', log_errors=False)
+        bids = await load_gdq_json(f"?type=bid&event={config['event_id']}")
+        bidoptions = await load_gdq_json(f"?type=bidtarget&event={config['event_id']}")
+
         # Header Message
         index = await load_gdq_index()
         dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at " \
@@ -136,13 +141,10 @@ class DiscordClient(discord.Client):
                                dnmsg])
         schedule_list = [outputmsg]
 
-        gdqvods = await load_json_from_reddit(f'{self.event}vods')
-        gdqytvods = await load_json_from_reddit(f'{self.event}yt', log_errors=False)
-        runcount = 0
-        bids = await load_gdq_json(f"?type=bid&event={config['event_id']}")
-        biddex = {}
         current_date = datetime.date(year=1970, month=1, day=15)  # for splitting schedule by end of day
-        # pre-prepare bids (more efficient than repeatedly iterating through every bid)
+
+        # create index of bids, {run_id: [bid1, bid2, ...]}, for efficient bid iteration
+        biddex = {}  # portmanteau of bid index, ha!
         for bidorigin in bids:
             if bidorigin['fields']['biddependency'] is not None:  # idk what this is, i suspect it's for bid options?
                 continue  # but i've never seen it used...
@@ -150,8 +152,9 @@ class DiscordClient(discord.Client):
             if bidorigrunid not in biddex:
                 biddex[bidorigrunid] = []
             biddex[bidorigrunid].append(bidorigin['fields'])
+
         # finally iterate through every run
-        for run_data_base in schedule:
+        for runcount, run_data_base in enumerate(schedule):
             run_data = run_data_base['fields']  # all run data contained in here (except the ID)
 
             starts_at = isoparse(run_data['starttime']).astimezone(self.timezone)  # converts utc time to event time
@@ -242,7 +245,6 @@ class DiscordClient(discord.Client):
                     if vod:  # can be blank strings from un-uploaded runs
                         output.append(f"<https://youtu.be/{vod}>")
             schedule_list.append('\n'.join(output))
-            runcount += 1
 
         return schedule_list
 
