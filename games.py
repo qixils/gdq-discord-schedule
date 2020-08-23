@@ -18,7 +18,7 @@ config = load(open('config.yaml', 'r'), Loader)
 
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
 # set this variable to None to disable
-murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 25000))
+murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
 murph = 187684157181132800
