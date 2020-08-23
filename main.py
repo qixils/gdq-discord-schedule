@@ -229,11 +229,9 @@ class DiscordClient(discord.Client):
                     if bid_data['goal'] is not None:
                         moneygoal = float(bid_data['goal'])
                         emoji = '✅' if moneyraised >= moneygoal else '❌' if is_closed else '⚠️'
-                        extradata = f"(${moneyraised:,.2f}/${moneygoal:,.2f}, {int((moneyraised / moneygoal) * 100)}%)"
+                        extradata = f"${moneyraised:,.2f}/${moneygoal:,.2f}, {int((moneyraised / moneygoal) * 100)}%"
                     else:
                         emoji = '💰' if is_closed else '⏰'
-                        # TODO: haven't currently found a way to get bid war options but they must be somewhere...
-                        # extradata = f"(${moneyraised:,.2f})"
                         if bid_id in optiondex and optiondex[bid_id]:
                             optfields = optiondex[bid_id]
                             templist = [o2['name'] for o2 in sorted(optfields, reverse=True, key=lambda o1: float(o1['total']))[:3]]
@@ -242,8 +240,8 @@ class DiscordClient(discord.Client):
                             templist[0] = f"**{templist[0]}**"
                             extradata = '/'.join(templist)
                         else:
-                            extradata = f"(<{bid_data['canonical_url']}>)"
-                    output.append(f"{emoji} {bidname} {extradata}")
+                            extradata = f"<{bid_data['canonical_url']}>"
+                    output.append(f"{emoji} {bidname} ({extradata})")
 
             # gets VOD links from VODThread
             # TODO: look for a new source or do it manually? sometimes misses events (had none for CRDQ)
