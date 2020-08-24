@@ -3,10 +3,14 @@
 This is a Discord bot that creates a mirror of the GDQ schedule in a specified text channel, complete with VOD links,
 runners, start times, donation incentive progress, bid war options, and more.
 
+![Schedule Example](https://i.imgur.com/KdHDlGq.png)
+
 It additionally posts an embed at the end of the channel listing the current run, the upcoming 3 runs (configurable), and when they will start.
 
+![Embed Example](https://i.imgur.com/FrF554b.png)
+
 The bot respects GDQ's rate limits as best as it can by waiting 2.5 seconds between each API call.
-Requests are minimal as it only calls the list of runs, donation incentives/bid wars, bid war options, and runner information.
+Requests are minimal as it only calls the list of runs, donation incentives/bid wars, bid war options, and runner information once per loop.
 
 ### main.py
 
