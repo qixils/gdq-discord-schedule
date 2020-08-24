@@ -12,6 +12,7 @@ try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+from discord.ext import tasks
 
 
 config = load(open('config.yaml', 'r'), Loader)
@@ -101,20 +102,21 @@ class DiscordClient(discord.Client):
         self.author = "@lexikiq#0493"  # me, the bot creator :)
 
         self.social_emoji = {}  # emojis used for social media links
-        self.event: str = None  # name of the event
-        self.timezone: pytz.timezone = None  # timezone of the event
         self.runners = {}  # dict of runner_id: fields
 
-        # create the background task and run it in the background
-        self.bg_task = self.loop.create_task(self.my_background_task())
+        # start the background schedule processor
+        self.processor.start()
 
-    async def runner_name(self, runner_id):
-        """
-        Returns the corresponding runner username for a runner ID
-        :param runner_id: integer for runner ID
-        :return: returns runner fields
-        """
-        return self.runners[runner_id]
+    async def on_ready(self):
+        print('Logged in as')
+        print(self.user.name)
+        print(self.user.id)
+        print('------')
+
+    async def on_message(self, message):
+        if message.channel.id == config['schedule_channel'] and message.type == discord.MessageType.pins_add and \
+                message.channel.permissions_for(message.guild.me).manage_messages:
+            await message.delete()
 
     async def human_schedule(self):
         """
@@ -182,7 +184,7 @@ class DiscordClient(discord.Client):
             runners = []  # not a one liner bc it makes them linked
             runners_linked = []
             for rid in run_data['runners']:  # for runner id in list of ids
-                data = await self.runner_name(rid)
+                data = self.runners[rid]
                 runner_name = discord.utils.escape_markdown(data['name'])
                 runners.append(runner_name)
                 stream_url = data['stream']
@@ -311,34 +313,43 @@ class DiscordClient(discord.Client):
         self.msgIndex += 1
         return None
 
-    async def on_ready(self):
-        print('Logged in as')
-        print(self.user.name)
-        print(self.user.id)
-        print('------')
+    @tasks.loop(minutes=config['wait_minutes'])
+    async def processor(self):
+        # donation status changer
+        index = await load_gdq_index()
+        donations = float(index['amount'])
+        donomsg = f"${donations:,.2f} donations"
+        activ = discord.Activity(type=discord.ActivityType.watching, name=donomsg)
+        await client.change_presence(activity=activ)
 
-    async def on_message(self, message):
-        if message.channel.id == 460520708414504961 and message.type == discord.MessageType.pins_add:
-            await message.delete()
+        try:  # the SCHEDULE
+            # reset variables
+            self.gameslist = []
+            self.embedlist = []
+            self.msgIndex = 0
+            # get schedule
+            schedule = await self.human_schedule()
+            schedule.append(self.embedlist)  # add data for embed
+            dtoffset = datetime.datetime.utcnow() - datetime.timedelta(days=10)
+            # update/post the schedule messages
+            async for message in self.rushschd.history(after=dtoffset, limit=None):
+                if message.author == self.user:
+                    await self.process_message(schedule, message=message)
+            while self.msgIndex < len(schedule):
+                await self.process_message(schedule, channel=self.rushschd)
+            print(f"{datetime.datetime.now()} Schedule Updated!")
+        except Exception as e:
+            print(f"SCHEDULE: {e}")
+            traceback.print_exc()
 
-    async def my_background_task(self):
-        await self.wait_until_ready()
-        # load emojis
-        for key, emoji in config['emojis'].items():
-            if isinstance(emoji, int):
-                disc_emoji = self.get_emoji(emoji)
-                if disc_emoji:
-                    emoji = str(disc_emoji)
-                else:
-                    emoji = ""
-            self.social_emoji[key] = emoji
-        # load embed author
-        lexi = self.get_user(140564059417346049)
-        if lexi:
-            self.author = lexi.mention
+        await self.rushschd.edit(topic='\n\n'.join(self.gameslist))
+
+    @processor.before_loop
+    async def before_processor(self):
         # load session
         global session
         session = aiohttp.ClientSession()
+
         # load event info
         if not isinstance(config['event_id'], int):
             orig_id = config['event_id']
@@ -352,48 +363,28 @@ class DiscordClient(discord.Client):
         self.timezone = pytz.timezone(index['timezone'])
         for runner_raw_data in (await load_gdq_json(f"?type=runner&event={config['event_id']}")):
             self.runners[runner_raw_data['pk']] = runner_raw_data['fields']
+
+        # we've done everything we can do before discord is ready, now wait for discord.py to finish connecting
+        await self.wait_until_ready()
+
+        # load social media emojis
+        for key, emoji in config['emojis'].items():
+            if isinstance(emoji, int):
+                disc_emoji = self.get_emoji(emoji)
+                if disc_emoji:
+                    emoji = str(disc_emoji)
+                else:
+                    emoji = ""
+            self.social_emoji[key] = emoji
+
+        # load embed author
+        lexi = self.get_user(140564059417346049)
+        if lexi:
+            self.author = lexi.mention
+
         # get channel
-        rushschd = self.get_channel(config['schedule_channel'])
-        assert rushschd is not None
-        init = True
-
-        # Start background loop
-        while not self.is_closed():
-            # avoid an redundant API call
-            if not init:
-                index = await load_gdq_index()
-            else:
-                init = False
-
-            # donation ping% / status changer
-            donations = float(index['amount'])
-            donomsg = f"${donations:,.2f} donations"
-            activ = discord.Activity(type=discord.ActivityType.watching, name=donomsg)
-            await client.change_presence(activity=activ)
-
-            try:  # the SCHEDULE
-                # reset variables
-                self.gameslist = []
-                self.embedlist = []
-                self.msgIndex = 0
-                # get schedule
-                schedule = await self.human_schedule()
-                schedule.append(self.embedlist)  # add data for embed
-                dtoffset = datetime.datetime.utcnow() - datetime.timedelta(days=10)
-                # update/post the schedule messages
-                async for message in rushschd.history(after=dtoffset, limit=None):
-                    if message.author == self.user:
-                        await self.process_message(schedule, message=message)
-                while self.msgIndex < len(schedule):
-                    await self.process_message(schedule, channel=rushschd)
-                print(f"{datetime.datetime.now()} Schedule Updated!")
-            except Exception as e:
-                print(f"SCHEDULE: {e}")
-                traceback.print_exc()
-
-            await rushschd.edit(topic='\n\n'.join(self.gameslist))
-
-            await asyncio.sleep(60 * config['wait_minutes'])
+        self.rushschd = self.get_channel(config['schedule_channel'])
+        assert self.rushschd is not None
 
 
 client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
