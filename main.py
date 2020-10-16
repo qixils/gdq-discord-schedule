@@ -282,7 +282,7 @@ class DiscordClient(discord.Client):
             desc = [f"Bot created by {self.author}",
                     f"Updates every {config['wait_minutes']} minutes",
                     f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
-            embed = discord.Embed(title=f"{self.event.upper()} Run Roster",
+            embed = discord.Embed(title=f"{self.eventname} Run Roster",
                                   description='\n'.join(desc),
                                   timestamp=datetime.datetime.utcnow(), color=0x3bb830)
             embed.set_footer(text="Last updated:")
@@ -293,7 +293,9 @@ class DiscordClient(discord.Client):
                     run_desc = ':'.join(run.split(':')[1:]).strip()
                     embed.add_field(name=run_when, value=run_desc, inline=False)
             else:
-                embed.add_field(name="N/A", value="The event has ended. Thank you all for watching and donating!")
+                val = "The event has ended. Thank you all for watching and donating!" if datetime.datetime.utcnow().astimezone(self.timezone) > self.starttime \
+                    else self.starttime.strftime("The event will start on %A %b %e.")
+                embed.add_field(name="N/A", value=val)
             outputmsg = None
         output_args = {False: {"args": [outputmsg], "kwargs": {}}, True: {"args": [], "kwargs": {"embed": embed}}}
 
@@ -360,7 +362,9 @@ class DiscordClient(discord.Client):
                 exit()
         index = await load_gdq_index()
         self.event = index['short']
+        self.eventname = index['name']
         self.timezone = pytz.timezone(index['timezone'])
+        self.starttime = isoparse(index['datetime']).astimezone(self.timezone)
         for runner_raw_data in (await load_gdq_json(f"?type=runner&event={config['event_id']}")):
             self.runners[runner_raw_data['pk']] = runner_raw_data['fields']
 
