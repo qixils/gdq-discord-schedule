@@ -10,6 +10,10 @@ token: ""
 # UPDATE: you can now use GDQ's shorthand as well, ie sgdq2020
 event_id: 30
 
+# Horaro schedule index, ie which of the schedules for the event should be used. 0 is the default
+# run horaro.py instead of main.py for Horaro schedules
+horaro_index: 0
+
 # ID of the channel to maintain the schedule in
 schedule_channel: 460520708414504961
 
@@ -18,7 +22,9 @@ schedule_channel: 460520708414504961
 local_timezone: US/Eastern
 
 # URL for GDQ API
+# Default API is "https://gamesdonequick.com/tracker/search/"
 # Can also use GDQ-based APIs, ie. ESA: "https://donations.esamarathon.com/search/"
+# For Horaro schedules, use "https://horaro.org/-/api/v1/events/" and horaro.py
 gdq_url: https://gamesdonequick.com/tracker/search/
 
 # Twitch channel to link to in the Run Roster

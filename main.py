@@ -332,7 +332,7 @@ class DiscordClient(discord.Client):
             # get schedule
             schedule = await self.human_schedule()
             schedule.append(self.embedlist)  # add data for embed
-            dtoffset = datetime.datetime.utcnow() - datetime.timedelta(days=10)
+            dtoffset = self.starttime.astimezone(pytz.timezone('UTC')).replace(tzinfo=None) - datetime.timedelta(days=1)
             # update/post the schedule messages
             async for message in self.rushschd.history(after=dtoffset, limit=None):
                 if message.author == self.user:
