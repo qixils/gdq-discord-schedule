@@ -132,12 +132,12 @@ class DiscordClient(discord.Client):
 
         # Header Message
         index = await load_gdq_index()
-        dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at " \
-                 "https://gamesdonequick.com/tracker/ui/donate/{lnk}. (Minimum Donation: {mnd})"
+        dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at {lnk}. (Minimum Donation: {mnd})"
         dnmsg2 = "Raised {amt} from {dns} donators for {cha}. "
         dnmsg = dnmsg1 if index['allow_donations'] else dnmsg2
         dnmsg = dnmsg.format(dns=f"{int(index['count']):,}", amt=f"${float(index['amount']):,.2f}",
-                             cha=index['receivername'], lnk=self.event, mnd=f"${float(index['minimumdonation']):,.2f}")
+                             cha=index['receivername'], lnk=index['canonical_url'],
+                             mnd=f"${float(index['minimumdonation']):,.2f}")
         outputmsg = '\n'.join([f"**{index['name']}**",
                                f"All times are in {self.timezone}.",
                                dnmsg])
