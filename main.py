@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import re
 import traceback
 import pytz
 import discord
@@ -26,6 +27,8 @@ reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellek
 
 # aiohttp session, do not change
 session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
+
+fix_space: re.Pattern = re.compile(" {2,}")
 
 
 async def load_gdq_json(query):
@@ -170,7 +173,7 @@ class DiscordClient(discord.Client):
             # adds the new day separator
             prefix = ''
             if starts_at.date() > current_date:
-                prefix += starts_at.strftime("_ _%n> **%A** %b %e%n_ _%n")
+                prefix += fix_space.sub("", starts_at.strftime("_ _%n> **%A** %b %e%n_ _%n"))
                 current_date = starts_at.date()
 
             # name options/examples:
@@ -230,7 +233,13 @@ class DiscordClient(discord.Client):
                     moneyraised = float(bid_data['total'])
                     if bid_data['goal'] is not None:
                         moneygoal = float(bid_data['goal'])
-                        emoji = '✅' if moneyraised >= moneygoal else '❌' if is_closed else '⚠️'
+                        # TODO: replace emoji chars with \N{} or something
+                        if moneyraised >= moneygoal:
+                            emoji = '✅'
+                        elif is_closed:
+                            emoji = '❌'
+                        else:
+                            emoji = '⚠️'
                         extradata = f"${moneyraised:,.2f}/${moneygoal:,.2f}, {int((moneyraised / moneygoal) * 100)}%"
                     else:
                         emoji = '💰' if is_closed else '⏰'
