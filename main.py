@@ -354,9 +354,9 @@ class DiscordClient(discord.Client):
 
         # load event info
         if not isinstance(config['event_id'], int):
-            orig_id = config['event_id']
+            orig_id = config['event_id'].lower()
             events = await load_gdq_json(f"?type=event")
-            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'] == orig_id), None)
+            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'].lower() == orig_id), None)
             if config['event_id'] is None:
                 print(f"Could not find event {orig_id}")
                 exit()
