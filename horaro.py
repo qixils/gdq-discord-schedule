@@ -29,7 +29,7 @@ reddit_headers = {"headers": {"User-Agent": "simple-wiki-reader:v0.1 (/u/noellek
 session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
 utc = pytz.timezone('UTC')
 
-fix_space: re.Pattern = re.compile(" {2,}")
+fix_space: re.Pattern = re.compile(" +")
 
 async def load_horaro_json(schedule: bool = True, ticker: bool = False):
     """
@@ -141,7 +141,7 @@ class DiscordClient(discord.Client):
             # adds the new day separator
             prefix = ''
             if starts_at.date() > current_date:
-                prefix += fix_space.sub("", starts_at.strftime("_ _%n> **%A** %b %e%n_ _%n"))
+                prefix += fix_space.sub(" ", starts_at.strftime("_ _%n> **%A** %b %e%n_ _%n"))
                 current_date = starts_at.date()
 
             game = run_data['data'][0]
