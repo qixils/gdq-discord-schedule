@@ -243,7 +243,9 @@ class DiscordClient(discord.Client):
             dtoffset = self.starttime.astimezone(utc).replace(tzinfo=None) - datetime.timedelta(days=1)
 
             # update/post the schedule messages
+            index_copy = self.msgIndex  # lazy fix for multi channels
             for chan in self.channels:
+                self.msgIndex = index_copy
                 async for message in chan.history(after=dtoffset, limit=None):
                     if message.author == self.user:
                         await self.process_message(schedule, message=message)
