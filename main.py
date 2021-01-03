@@ -66,6 +66,7 @@ async def load_json_from_reddit(wiki_page, subreddit="VODThread", log_errors: bo
     :param subreddit: the subreddit containing the wikipage
     :param log_errors: whether to print errors
     """
+    wiki_page = wiki_page.lower()
     url = f'https://www.reddit.com/r/{subreddit}/wiki/{wiki_page}.json'
     async with session.get(url, **reddit_headers) as r:
         if r.status == 200:
