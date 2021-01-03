@@ -117,7 +117,7 @@ class DiscordClient(discord.Client):
         print('------')
 
     async def on_message(self, message):
-        if message.channel.id == config['schedule_channel'] and message.type == discord.MessageType.pins_add and \
+        if message.channel.id in config['schedule_channel'] and message.type == discord.MessageType.pins_add and \
                 message.channel.permissions_for(message.guild.me).manage_messages:
             await message.delete()
 
@@ -343,17 +343,19 @@ class DiscordClient(discord.Client):
             schedule.append(self.embedlist)  # add data for embed
             dtoffset = self.starttime.astimezone(pytz.timezone('UTC')).replace(tzinfo=None) - datetime.timedelta(days=1)
             # update/post the schedule messages
-            async for message in self.rushschd.history(after=dtoffset, limit=None):
-                if message.author == self.user:
-                    await self.process_message(schedule, message=message)
-            while self.msgIndex < len(schedule):
-                await self.process_message(schedule, channel=self.rushschd)
-            print(f"{datetime.datetime.now()} Schedule Updated!")
+            for chan in self.channels:
+                async for message in chan.history(after=dtoffset, limit=None):
+                    if message.author == self.user:
+                        await self.process_message(schedule, message=message)
+                while self.msgIndex < len(schedule):
+                    await self.process_message(schedule, channel=chan)
+                print(f"[{datetime.datetime.now()}] {chan}: Schedule Updated!")
         except Exception as e:
             print(f"SCHEDULE: {e}")
             traceback.print_exc()
 
-        await self.rushschd.edit(topic='\n\n'.join(self.gameslist))
+        for chan in self.channels:
+            await chan.edit(topic='\n\n'.join(self.gameslist))
 
     @processor.before_loop
     async def before_processor(self):
@@ -396,8 +398,8 @@ class DiscordClient(discord.Client):
             self.author = lexi.mention
 
         # get channel
-        self.rushschd = self.get_channel(config['schedule_channel'])
-        assert self.rushschd is not None
+        self.channels = list(filter(lambda x: x is not None, map(lambda x: self.get_channel(x), config['schedule_channel'])))
+        assert len(self.channels) == len(config['schedule_channel'])
 
 
 client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
