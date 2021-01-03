@@ -349,7 +349,7 @@ class DiscordClient(discord.Client):
                         await self.process_message(schedule, message=message)
                 while self.msgIndex < len(schedule):
                     await self.process_message(schedule, channel=chan)
-                print(f"[{datetime.datetime.now()}] {chan}: Schedule Updated!")
+                print(f"[{datetime.datetime.now()}] #{chan}: Schedule Updated!")
         except Exception as e:
             print(f"SCHEDULE: {e}")
             traceback.print_exc()
