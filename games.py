@@ -18,12 +18,13 @@ config = load(open('config.yaml', 'r'), Loader)
 
 # Murphy's Ping% Game: every [x] donation amount, Murphy will be pinged.
 # set this variable to None to disable
-murph_donations = list(range(1000, 10000, 1000)) + list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 20000)) + list(range(1000000, 10000000, 50000))
+# TODO: copy from raspi
+murph_donations = list(range(5000, 50000, 5000)) + list(range(50000, 100000, 10000)) + list(range(100000, 300000, 20000)) + list(range(300000, 700000, 10000)) + list(range(700000, 1000000, 20000)) + list(range(1000000, 1800000, 25000)) + list(range(1800000, 10000000, 50000))
 # channel ID for murphy's game
 murph_channel_id = 442082610785550337
 murph = 187684157181132800
 # donation prediction game file
-predictions = json.load(open('predictions.json', 'r'))
+predictions = json.load(open('predictions.json', 'r'))  # todo: create new predictions file
 
 # aiohttp session, do not change
 session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
@@ -146,16 +147,15 @@ class GDQGames(discord.Client):
                     if self.donations > prediction['max']:
                         self.lost.append(prediction['ping'])
                         if not loser:
-                            user = self.get_user(prediction['ping'])
+                            user = discord.Object(prediction['ping'])
                             users.append(user)
-                            loser = "{}'s donation total prediction of ${:,.2f} has been surpassed.".format(
-                                user.mention, prediction['amount'])
+                            loser = "<@{}>'s donation total prediction of ${:,.2f} has been surpassed.".format(
+                                prediction['ping'], prediction['amount'])
                     elif loser and not winner:  # i don't *need* the 'if loser' part buut it feels safer
                         user = self.get_user(prediction['ping'])
                         users.append(user)
                         winner = "The next closest prediction is {}'s guess of ${:,.2f}.".format(user.mention,
                                                                                                  prediction['amount'])
-                pass
             if not self.first_donation_check and loser and winner:
                 allowed = discord.AllowedMentions(users=users)
                 await self.channel.send(f"{loser}\n{winner}", allowed_mentions=allowed)
@@ -169,9 +169,9 @@ class GDQGames(discord.Client):
         session = aiohttp.ClientSession()
 
         if not isinstance(config['event_id'], int):
-            orig_id = config['event_id']
+            orig_id = config['event_id'].lower()
             events = await load_gdq_json(f"?type=event")
-            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'] == orig_id), None)
+            config['event_id'] = next((event['pk'] for event in events if event['fields']['short'].lower() == orig_id), None)
             if config['event_id'] is None:
                 print(f"Could not find event {orig_id}")
                 exit()
