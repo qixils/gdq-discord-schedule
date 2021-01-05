@@ -135,7 +135,7 @@ class GDQGames(discord.Client):
                         else:  # weird edge case?? use legacy message
                             y = f"${x:,}"
                         out = f"<@{murph}> {y}"
-                        mentions = discord.AllowedMentions(users=[self.get_user(murph)])
+                        mentions = discord.AllowedMentions(users=[discord.Object(murph)])
                         await self.channel.send(out, allowed_mentions=mentions)
                     self.donation_milestones.append(x)
 
