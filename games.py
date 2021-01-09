@@ -152,10 +152,9 @@ class GDQGames(discord.Client):
                             loser = "<@{}>'s donation total prediction of ${:,.2f} has been surpassed.".format(
                                 prediction['ping'], prediction['amount'])
                     elif loser and not winner:  # i don't *need* the 'if loser' part buut it feels safer
-                        user = self.get_user(prediction['ping'])
+                        user = discord.Object(prediction['ping'])
                         users.append(user)
-                        winner = "The next closest prediction is {}'s guess of ${:,.2f}.".format(user.mention,
-                                                                                                 prediction['amount'])
+                        winner = "The next closest prediction is <@{}>'s guess of ${:,.2f}.".format(prediction['ping'], prediction['amount'])
             if not self.first_donation_check and loser and winner:
                 allowed = discord.AllowedMentions(users=users)
                 await self.channel.send(f"{loser}\n{winner}", allowed_mentions=allowed)
