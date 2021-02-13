@@ -99,6 +99,14 @@ def line_split(input_message, char_limit=2000):
     return [msg.strip() for msg in output]
 
 
+def bkup_link(_dir: str, _id: str):
+    _dir, _id = str(_dir), str(_id)
+    bkup_lnk_raw = config['gdq_url'].split('/')
+    bkup_lnk_raw[-1] = _id
+    bkup_lnk_raw[-2] = _dir
+    return '/'.join(bkup_lnk_raw)
+
+
 class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -139,8 +147,9 @@ class DiscordClient(discord.Client):
         dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at {lnk}. (Minimum Donation: {mnd})"
         dnmsg2 = "Raised {amt} from {dns} donators for {cha}. "
         dnmsg = dnmsg1 if not index['locked'] else dnmsg2
+        lnk = index['canonical_url'] if 'canonical_url' in index else bkup_link("index", index['short'])
         dnmsg = dnmsg.format(dns=f"{int(index['count']):,}", amt=f"${float(index['amount']):,.2f}",
-                             cha=index['receivername'], lnk=index['canonical_url'],
+                             cha=index['receivername'], lnk=lnk,
                              mnd=f"${float(index['minimumdonation']):,.2f}")
         outputmsg = '\n'.join([f"**{index['name']}**",
                                f"All times are in {self.timezone}.",
@@ -252,7 +261,9 @@ class DiscordClient(discord.Client):
                             templist[0] = f"**{templist[0]}**"
                             extradata = '/'.join(templist)
                         else:
-                            extradata = f"<{bid_data['canonical_url']}>"
+                            bid_lnk = bid_data['canonical_url'] if 'canonical_url' in bid_data else bkup_link("bid",
+                                                                                                              bid_id)
+                            extradata = f"<{bid_lnk}>"
                     output.append(f"{emoji} {bidname} ({extradata})")
 
             # gets VOD links from VODThread
