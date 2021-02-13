@@ -378,7 +378,11 @@ class DiscordClient(discord.Client):
         self.event = index['short']
         self.eventname = index['name']
         self.timezone = pytz.timezone(index['timezone'])
-        self.starttime = isoparse(index['datetime']).astimezone(self.timezone)
+        if 'datetime' in index:
+            dt_str = index['datetime']
+        else:
+            dt_str = index['date']
+        self.starttime = isoparse(dt_str).astimezone(self.timezone)
         for runner_raw_data in (await load_gdq_json(f"?type=runner&event={config['event_id']}")):
             self.runners[runner_raw_data['pk']] = runner_raw_data['fields']
 
