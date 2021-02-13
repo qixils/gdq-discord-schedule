@@ -211,8 +211,11 @@ class DiscordClient(discord.Client):
                 if data['youtube'] and data['platform'] != 'YOUTUBE' and self.social_emoji['youtube']:
                     runner_name += " [{}](https://youtube.com/user/{})".format(self.social_emoji['youtube'], data['youtube'])
                 runners_linked.append(runner_name)
-            human_runners = comma_format(runners)  # -> format with commas
-            human_runners_linked = comma_format(runners_linked)
+            if runners:
+                human_runners = comma_format(runners)  # -> format with commas
+                human_runners_linked = comma_format(runners_linked)
+            else:
+                human_runners = human_runners_linked = "[nobody]"
 
             race_str = " **RACE**" if (not run_data['coop'] and len(runners) > 1) else ""  # says if race or not
             estimate = run_data['run_time']  # run length/estimate
