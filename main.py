@@ -81,7 +81,9 @@ async def load_json_from_reddit(wiki_page, subreddit="VODThread", log_errors: bo
 
 
 # Utility Functions
-def comma_format(input_list):
+def comma_format(input_list) -> str:
+    if not input_list:
+        return ''
     *a, b = input_list
     return ' and '.join([', '.join(a), b]) if a else b
 
