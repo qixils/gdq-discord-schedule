@@ -138,7 +138,7 @@ class DiscordClient(discord.Client):
         index = await load_gdq_index()
         dnmsg1 = "Join the {dns} donators who have raised {amt} for {cha} at {lnk}. (Minimum Donation: {mnd})"
         dnmsg2 = "Raised {amt} from {dns} donators for {cha}. "
-        dnmsg = dnmsg1 if index['allow_donations'] else dnmsg2
+        dnmsg = dnmsg1 if not index['locked'] else dnmsg2
         dnmsg = dnmsg.format(dns=f"{int(index['count']):,}", amt=f"${float(index['amount']):,.2f}",
                              cha=index['receivername'], lnk=index['canonical_url'],
                              mnd=f"${float(index['minimumdonation']):,.2f}")
