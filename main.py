@@ -113,7 +113,7 @@ class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.author = "@lexikiq#0493"  # me, the bot creator :)
+        self.author = "lexikiq#0493"  # me, the bot creator :)
 
         self.social_emoji = {}  # emojis used for social media links
         self.runners = {}  # dict of runner_id: fields
@@ -308,6 +308,10 @@ class DiscordClient(discord.Client):
             desc = [f"Bot created by {self.author}",
                     f"Updates every {config['wait_minutes']} minutes",
                     f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
+            if self.event.lower().startswith('esa'):
+                desc.append("")
+                desc.append("__**ESA is notoriously bad at updating their schedules. "
+                            "Take these times and estimates with a grain of salt.**__")
             embed = discord.Embed(title=f"{self.eventname} Run Roster",
                                   description='\n'.join(desc),
                                   timestamp=datetime.datetime.utcnow(), color=0x3bb830)
