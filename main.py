@@ -1,12 +1,13 @@
 import asyncio
 import datetime
+from datetime import datetime as dtlib
 import json
+import math
 import re
 import traceback
 import pytz
 import discord
 import aiohttp
-import humanize
 from dateutil.parser import *
 from yaml import load
 try:
@@ -109,11 +110,18 @@ def bkup_link(_dir: str, _id: str):
     return '/'.join(bkup_lnk_raw)
 
 
+utc = pytz.timezone('UTC')
+
+
+def timestamp_obj_of(dt: datetime.datetime, mode: str = "") -> str:
+    return f"<t:{math.floor((dt.astimezone(utc) - dtlib(1970, 1, 1)).total_seconds())}:{mode}>"
+
+
 class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.author = "lexikiq#0493"  # me, the bot creator :)
+        self.author = "qixils#0493"  # me, the bot creator :)
 
         self.social_emoji = {}  # emojis used for social media links
         self.runners = {}  # dict of runner_id: fields
@@ -181,7 +189,8 @@ class DiscordClient(discord.Client):
             run_data = run_data_base['fields']  # all run data contained in here (except the ID)
 
             starts_at = isoparse(run_data['starttime']).astimezone(self.timezone)  # converts utc time to event time
-            starts_at_frmt = starts_at.strftime("`%b %d %I:%M %p`")  # formats for msg later
+            _starts_at_frmt = timestamp_obj_of(starts_at, 'd')
+            starts_at_frmt = _starts_at_frmt + " " + _starts_at_frmt.replace('d', 't')
             # adds the new day separator
             prefix = ''
             if starts_at.date() > current_date:
@@ -225,7 +234,7 @@ class DiscordClient(discord.Client):
             gameslist_prefix = None
             # if one of the upcoming runs:
             if 0 < len(self.gameslist) < config['upcoming_runs']+1:
-                htime = humanize.naturaltime(starts_at.astimezone(local_timezone).replace(tzinfo=None))
+                htime = _starts_at_frmt.replace('d', 'R')
                 gameslist_prefix = htime[0].upper() + htime[1:]  # capitalize first letter
             # if current run:
             elif starts_at <= dtnow < isoparse(run_data['endtime']).astimezone(self.timezone):

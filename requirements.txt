@@ -1,6 +1,5 @@
 discord.py>=1.4.0
 aiohttp
-humanize
 pytz
 python-dateutil
 pyyaml
