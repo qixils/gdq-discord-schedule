@@ -8,6 +8,7 @@ import traceback
 import pytz
 import discord
 import aiohttp
+import humanize
 from dateutil.parser import *
 from yaml import load
 try:
@@ -235,7 +236,7 @@ class DiscordClient(discord.Client):
             gameslist_prefix = None
             # if one of the upcoming runs:
             if 0 < len(self.gameslist) < config['upcoming_runs']+1:
-                htime = _starts_at_frmt.replace('d', 'R')
+                htime = humanize.naturaltime(starts_at.astimezone(local_timezone).replace(tzinfo=None))
                 gameslist_prefix = htime[0].upper() + htime[1:]  # capitalize first letter
             # if current run:
             elif starts_at <= dtnow < isoparse(run_data['endtime']).astimezone(self.timezone):
