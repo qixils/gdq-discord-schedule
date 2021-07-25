@@ -111,10 +111,11 @@ def bkup_link(_dir: str, _id: str):
 
 
 utc = pytz.timezone('UTC')
+_1970 = dtlib(1970, 1, 1)
 
 
 def timestamp_obj_of(dt: datetime.datetime, mode: str = "") -> str:
-    return f"<t:{math.floor((dt.astimezone(utc) - dtlib(1970, 1, 1)).total_seconds())}:{mode}>"
+    return f"<t:{math.floor((dt.astimezone(utc).replace(tzinfo=None) - _1970).total_seconds())}:{mode}>"
 
 
 class DiscordClient(discord.Client):
