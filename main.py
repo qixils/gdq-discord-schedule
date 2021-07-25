@@ -164,7 +164,7 @@ class DiscordClient(discord.Client):
                              cha=index['receivername'], lnk=lnk,
                              mnd=f"${float(index['minimumdonation']):,.2f}")
         outputmsg = '\n'.join([f"**{index['name']}**",
-                               f"All times are in {self.timezone}.",
+                               f"Date headers are in the {self.timezone} timezone.",
                                dnmsg])
         schedule_list = [outputmsg]
 
