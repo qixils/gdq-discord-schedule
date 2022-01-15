@@ -40,9 +40,6 @@ class DiscordClient(discord.Client):
         async with self.session.get(url, **self.gdq_headers) as r:
             if r.status == 200:
                 jsondata = await r.json()
-
-                # GDQ doesn't provide official ratelimits, so we apply our own safe amount
-                await asyncio.sleep(2.5)
             else:
                 print("GET {} returned {} {} -- aborting".format(url, r.status, await r.text()))
                 exit()
@@ -86,11 +83,12 @@ class DiscordClient(discord.Client):
 
         current_amount = await self.load_donation_total()
         # conversion to int gives users benefit of the doubt in regard to rounding errors
-        if int(amount) >= int(current_amount):
+        if int(current_amount) >= int(amount):
             return
 
         await msg.reply(f"liar! >:( we're at only ${current_amount:,.2f}, not ${amount:,.2f}.")
 
 
-client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
-client.run(client.config['token'], bot=True)
+if __name__ == '__main__':
+    client = DiscordClient(allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
+    client.run(client.config['token'], bot=True)
