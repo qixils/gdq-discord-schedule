@@ -1,5 +1,6 @@
 import asyncio
 import re
+import typing
 
 import aiohttp
 import discord
@@ -26,7 +27,8 @@ class DiscordClient(discord.Client):
         super().__init__(*args, **kwargs)
         self.config = load(open('config.yaml', 'r'), Loader)
         # aiohttp session, do not change
-        self.session: aiohttp.ClientSession = None  # gets defined later because it yelled at me for creating in non-async func
+        # (it gets defined later because it yelled at me for creating in non-async func)
+        self.session: typing.Optional[aiohttp.ClientSession] = None
 
     async def load_gdq_json(self, query):
         """
