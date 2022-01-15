@@ -81,8 +81,8 @@ class DiscordClient(discord.Client):
         if not match:
             return
         amount = float(match.group(1).replace(',', ''))
-        if match.group(1):
-            amount *= self.suffix_map[match.group(1).lower()]
+        if match.group(2):
+            amount *= self.suffix_map[match.group(2).lower()]
 
         current_amount = await self.load_donation_total()
         # conversion to int gives users benefit of the doubt in regard to rounding errors
