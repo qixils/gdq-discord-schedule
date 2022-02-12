@@ -319,7 +319,7 @@ class DiscordClient(discord.Client):
             desc = [f"Bot created by {self.author}",
                     f"Updates every {config['wait_minutes']} minutes",
                     f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
-            if self.event.lower().startswith('esa'):
+            if False: #self.event.lower().startswith('esa'):
                 desc.append("")
                 desc.append("__**ESA is notoriously bad at updating their schedules. "
                             "Take these times and estimates with a grain of salt.**__")
