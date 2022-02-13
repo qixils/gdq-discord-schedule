@@ -225,7 +225,7 @@ class DiscordClient(discord.Client):
                 data = self.runners[rid]
                 runner_name = discord.utils.escape_markdown(data['name'])
                 runners.append(runner_name)
-                stream_url = data['stream']
+                stream_url = fix_stream_url(data['stream'])
                 if stream_url:
                     name_temp = runner_name
                     if "twitch.tv/" in stream_url and self.social_emoji['twitch']:
