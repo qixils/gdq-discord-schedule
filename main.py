@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import typing
 from datetime import datetime as dtlib
 import json
 import math
@@ -119,14 +120,24 @@ def timestamp_obj_of(dt: datetime.datetime, mode: str = "") -> str:
     return f"<t:{math.floor((dt.astimezone(utc).replace(tzinfo=None) - _1970).total_seconds())}:{mode}>"
 
 
+# noinspection HttpUrlsUsage
+def fix_stream_url(url: typing.Optional[str]) -> typing.Optional[str]:
+    if not url:
+        return url
+    if url.startswith("http://"):
+        url.replace("http://", "https://", 1)
+    if not url.startswith("https://"):
+        url = "https://" + url
+    return url
+
+
 class DiscordClient(discord.Client):
+    author = "qixils#0493"  # me, the bot creator :)
+    social_emoji = {}  # emojis used for social media links
+    runners = {}  # dict of runner_id: fields
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.author = "qixils#0493"  # me, the bot creator :)
-
-        self.social_emoji = {}  # emojis used for social media links
-        self.runners = {}  # dict of runner_id: fields
 
         # start the background schedule processor
         self.processor.start()
@@ -137,6 +148,7 @@ class DiscordClient(discord.Client):
         print(self.user.id)
         print('------')
 
+    # noinspection PyMethodMayBeStatic
     async def on_message(self, message):
         if message.channel.id in config['schedule_channel'] and message.type == discord.MessageType.pins_add and \
                 message.channel.permissions_for(message.guild.me).manage_messages:
@@ -215,11 +227,16 @@ class DiscordClient(discord.Client):
                 runners.append(runner_name)
                 stream_url = data['stream']
                 if stream_url:
-                    name_temp = "{} {}".format(runner_name, self.social_emoji['twitch']).strip()
+                    name_temp = runner_name
+                    if "twitch.tv/" in stream_url and self.social_emoji['twitch']:
+                        name_temp += " " + self.social_emoji['twitch']
+                    elif "youtube.com/" in stream_url and self.social_emoji['youtube']:
+                        name_temp += " " + self.social_emoji['youtube']
+                    name_temp = name_temp.strip()
                     runner_name = "[{}]({})".format(name_temp, stream_url)
                 if data['twitter'] and self.social_emoji['twitter']:
                     runner_name += " [{}](https://twitter.com/{})".format(self.social_emoji['twitter'], data['twitter'])
-                if data['youtube'] and data['platform'] != 'YOUTUBE' and self.social_emoji['youtube']:
+                if data['youtube'] and "youtube.com/" not in stream_url and self.social_emoji['youtube']:
                     runner_name += " [{}](https://youtube.com/user/{})".format(self.social_emoji['youtube'], data['youtube'])
                 runners_linked.append(runner_name)
             if runners:
@@ -277,8 +294,7 @@ class DiscordClient(discord.Client):
                             templist[0] = f"**{templist[0]}**"
                             extradata = '/'.join(templist)
                         else:
-                            bid_lnk = bid_data['canonical_url'] if 'canonical_url' in bid_data else bkup_link("bid",
-                                                                                                              bid_id)
+                            bid_lnk = bid_data['canonical_url'] if 'canonical_url' in bid_data else bkup_link("bid", bid_id)
                             extradata = f"<{bid_lnk}>"
                     output.append(f"{emoji} {bidname} ({extradata})")
 
@@ -315,14 +331,14 @@ class DiscordClient(discord.Client):
         is_embed = not isinstance(outputmsg, str)
         embed = None
         if is_embed:
-            s_name = "{} {}".format(self.social_emoji['twitch'], config['twitch_channel']).strip()
+            s_name = "{} {}".format(config['twitch_channel'], self.social_emoji['twitch']).strip()
             desc = [f"Bot created by {self.author}",
                     f"Updates every {config['wait_minutes']} minutes",
                     f"Watch live at [{s_name}](https://twitch.tv/{config['twitch_channel']})"]
-            if False: #self.event.lower().startswith('esa'):
+            if self.event.lower().startswith('esa'):
                 desc.append("")
-                desc.append("__**ESA is notoriously bad at updating their schedules. "
-                            "Take these times and estimates with a grain of salt.**__")
+                desc.append("__**ESA doesn't typically update their schedule to match real-time, "
+                            "so take these times and estimates with a grain of salt.**__")
             embed = discord.Embed(title=f"{self.eventname} Run Roster",
                                   description='\n'.join(desc),
                                   timestamp=datetime.datetime.utcnow(), color=0x3bb830)
