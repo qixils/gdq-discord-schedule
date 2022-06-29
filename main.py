@@ -142,6 +142,12 @@ class DiscordClient(discord.Client):
         # start the background schedule processor
         self.processor.start()
 
+    async def get_runner(self, runner_id: int) -> typing.Dict[str, typing.Any]:
+        if runner_id not in self.runners:
+            data = await load_gdq_json(f"?type=runner&id={runner_id}")
+            self.runners[runner_id] = data[0]['fields']
+        return self.runners[runner_id]
+
     async def on_ready(self):
         print('Logged in as')
         print(self.user.name)
@@ -222,7 +228,7 @@ class DiscordClient(discord.Client):
             runners = []  # not a one liner bc it makes them linked
             runners_linked = []
             for rid in run_data['runners']:  # for runner id in list of ids
-                data = self.runners[rid]
+                data = await self.get_runner(rid)
                 runner_name = discord.utils.escape_markdown(data['name'])
                 runners.append(runner_name)
                 stream_url = fix_stream_url(data['stream'])
