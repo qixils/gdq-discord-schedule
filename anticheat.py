@@ -15,7 +15,7 @@ except ImportError:
 class DiscordClient(discord.Client):
     # request headers
     gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
-    murphy_ping = re.compile(r"<@!?187684157181132800>")
+    murphy_ping = re.compile(r"<@!?(?:187684157181132800|460906275400843274)>")
     channel_id = 442082610785550337
     amount_regex = re.compile(r"^\$?((?:\d{1,3},?){1,3}(?:\.\d+)?)(?: ?([MKmk]))?")
     suffix_map = {
@@ -65,6 +65,15 @@ class DiscordClient(discord.Client):
         print(self.user.name)
         print(self.user.id)
         print('------')
+
+        # load event info
+        if not isinstance(self.config['event_id'], int):
+            orig_id = self.config['event_id'].lower()
+            events = await self.load_gdq_json(f"?type=event")
+            self.config['event_id'] = next((event['pk'] for event in events if event['fields']['short'].lower() == orig_id), None)
+            if self.config['event_id'] is None:
+                print(f"Could not find event {orig_id}")
+                exit()
 
     async def on_message(self, msg: discord.Message):
         if self.session is None:
