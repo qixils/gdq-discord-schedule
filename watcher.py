@@ -1,5 +1,3 @@
-import re
-import typing
 from datetime import datetime
 import os
 import requests
