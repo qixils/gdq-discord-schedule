@@ -91,10 +91,10 @@ class Watcher:
         print(f"Last updated at {datetime.now()}")
 
         prev_diff_until_next = self.get_next_target(self.last_total) - self.last_total
-        if prev_diff_until_next > 100 and diff_until_next <= self.fast_tick:
-            os.system('notify-send "A donation target is approaching! (<$100)" --urgency=critical --app-name="GDQ Watcher" --app-icon=data-warning')
-        elif prev_diff_until_next > 1000 and diff_until_next <= self.super_fast_tick:
-            os.system('notify-send "A donation target is approaching! (<$1000)" --urgency=normal --expire-time=10000 --app-name="GDQ Watcher" --app-icon=data-information')
+        if prev_diff_until_next > self.super_fast_tick and diff_until_next <= self.super_fast_tick:
+            os.system('notify-send "A donation target is approaching! (<$100)" --urgency=critical --app-name="GDQ Watcher" --icon=data-warning')
+        elif prev_diff_until_next > self.fast_tick and diff_until_next <= self.fast_tick:
+            os.system('notify-send "A donation target is approaching! (<$1000)" --urgency=normal --expire-time=20000 --app-name="GDQ Watcher" --icon=data-information')
 
         self.last_total = total
         if diff_until_next <= self.super_fast_tick:
