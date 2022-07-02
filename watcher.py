@@ -74,6 +74,7 @@ class Watcher:
         prev_target = self.get_prev_target(total)
         if self.last_total > 0 and self.get_next_target(self.last_total) != target:
             self.hit_target_at = datetime.now()
+            os.system('notify-send " ! ! ! ! ! A donation target has been reached ! ! ! ! ! " --urgency=critical --app-name="GDQ Watcher" --icon=kmymoney')
 
         os.system('clear')
         print(f"Most Recent Target: ${prev_target:,.0f}")
