@@ -15,7 +15,8 @@ class Watcher:
     # request headers
     gdq_headers = {"headers": {"User-Agent": "rush-schedule-updater"}}
     last_total = 0
-    target_modulo = 25000
+    target_modulo = 50000
+    medium_tick = 2500
     fast_tick = 1000
     super_fast_tick = 100
     hit_target_at = None
@@ -97,9 +98,11 @@ class Watcher:
 
         self.last_total = total
         if diff_until_next <= self.super_fast_tick:
-            time.sleep(0.5)
+            time.sleep(0.3)
         elif diff_until_next <= self.fast_tick:
             time.sleep(1)
+        elif diff_until_next <= self.medium_tick:
+            time.sleep(3)
         else:
             time.sleep(10)
 
