@@ -98,13 +98,13 @@ class Watcher:
 
         self.last_total = total
         if diff_until_next <= self.super_fast_tick:
-            time.sleep(0.3)
+            time.sleep(0.2)
         elif diff_until_next <= self.fast_tick:
-            time.sleep(1)
+            time.sleep(.8)
         elif diff_until_next <= self.medium_tick:
-            time.sleep(3)
+            time.sleep(2)
         else:
-            time.sleep(10)
+            time.sleep(7)
 
 
 if __name__ == '__main__':
