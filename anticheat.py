@@ -102,4 +102,4 @@ if __name__ == '__main__':
     intents = discord.Intents.default()
     intents.message_content = True
     client = DiscordClient(intents=intents, allowed_mentions=discord.AllowedMentions(users=False, roles=False, everyone=False))
-    client.run(client.config['token'], bot=True)
+    client.run(client.config['token'])
