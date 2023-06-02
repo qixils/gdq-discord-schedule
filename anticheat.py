@@ -93,8 +93,10 @@ class DiscordClient(discord.Client):
         current_amount = await self.load_donation_total()
         # conversion to int gives users benefit of the doubt in regard to rounding errors
         if int(current_amount) >= int(amount):
+            print(f"${msg.author} (${msg.author.id}) is HONEST about ${amount:,.2f}!")
             return
 
+        print(f"${msg.author} (${msg.author.id}) is LYING about ${amount:,.2f}!")
         await msg.reply(f"liar! >:( we're at only ${current_amount:,.2f}, not ${amount:,.2f}.")
 
     async def on_message(self, msg: discord.Message):
