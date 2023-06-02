@@ -75,7 +75,7 @@ class DiscordClient(discord.Client):
                 print(f"Could not find event {orig_id}")
                 exit()
 
-    async def on_message(self, msg: discord.Message):
+    async def handle(self, msg: discord.Message):
         if self.session is None:
             return
         if msg.channel.id != self.channel_id:
@@ -96,6 +96,12 @@ class DiscordClient(discord.Client):
             return
 
         await msg.reply(f"liar! >:( we're at only ${current_amount:,.2f}, not ${amount:,.2f}.")
+
+    async def on_message(self, msg: discord.Message):
+        await handle(msg)
+
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        await handle(after)
 
 
 if __name__ == '__main__':
