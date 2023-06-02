@@ -98,10 +98,10 @@ class DiscordClient(discord.Client):
         await msg.reply(f"liar! >:( we're at only ${current_amount:,.2f}, not ${amount:,.2f}.")
 
     async def on_message(self, msg: discord.Message):
-        await handle(msg)
+        await self.handle(msg)
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        await handle(after)
+        await self.handle(after)
 
 
 if __name__ == '__main__':
