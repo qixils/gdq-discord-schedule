@@ -22,6 +22,7 @@ class DiscordClient(discord.Client):
         'm': 1000000,
         'k': 1000
     }
+    current_amount: float = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,14 +91,15 @@ class DiscordClient(discord.Client):
         if match.group(2):
             amount *= self.suffix_map[match.group(2).lower()]
 
-        current_amount = await self.load_donation_total()
+        if self.current_amount < amount:
+            self.current_amount = await self.load_donation_total()
         # conversion to int gives users benefit of the doubt in regard to rounding errors
-        if int(current_amount) >= int(amount):
+        if int(self.current_amount) >= int(amount):
             print(f"${msg.author} (${msg.author.id}) is HONEST about ${amount:,.2f}!")
             await msg.add_reaction("✅")
         else:
             print(f"${msg.author} (${msg.author.id}) is LYING about ${amount:,.2f}!")
-            await msg.reply(f"liar! >:( we're at only ${current_amount:,.2f}, not ${amount:,.2f}.")
+            await msg.reply(f"liar! >:( we're at only ${self.current_amount:,.2f}, not ${amount:,.2f}.")
 
     async def on_message(self, msg: discord.Message):
         await self.handle(msg)
